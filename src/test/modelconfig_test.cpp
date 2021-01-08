@@ -22,6 +22,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include "../modelconfig.hpp"
 #include "../status.hpp"
 #include "test_utils.hpp"
 
@@ -148,12 +149,16 @@ TEST(ModelConfig, parseShapeFromString) {
     // Invalid
     std::string invalid_str1 = "(1, 2, 3, 4]";
     std::string invalid_str2 = "(1, 2, 3.14, 4)";
+    std::string invalid_str3 = "(1,2221413523534234632463462346234562)";
     ovms::Status status;
 
     status = config.parseShape(shapeInfo, invalid_str1);
     EXPECT_EQ(status, ovms::StatusCode::SHAPE_WRONG_FORMAT);
     status = config.parseShape(shapeInfo, invalid_str2);
     EXPECT_EQ(status, ovms::StatusCode::SHAPE_WRONG_FORMAT);
+
+    status = config.parseShape(shapeInfo, invalid_str3);
+    EXPECT_EQ(status, ovms::StatusCode::INVALID_SHAPE);
 }
 
 TEST(ModelConfig, parseShapeParam) {
@@ -438,4 +443,35 @@ TEST(ModelConfig, modelVersionPolicyIncorrect) {
     ovms::ModelConfig config;
     auto result = config.parseModelVersionPolicy(command);
     EXPECT_EQ(result, ovms::StatusCode::MODEL_VERSION_POLICY_UNSUPPORTED_KEY);
+}
+
+TEST(ModelConfig, ConfigParseNodeWithForbiddenShapeName) {
+    std::string config = R"#(
+        {
+        "model_config_list": [
+            {
+                "config": {
+                    "name": "alpha",
+                    "base_path": "/tmp/models/dummy1",
+                    "shape": {")#" +
+                         ovms::ANONYMOUS_INPUT_NAME + R"#(": "(1, 3, 600, 600)"}
+                }
+            }
+        ]
+    }
+    )#";
+
+    rapidjson::Document configJson;
+    rapidjson::ParseResult parsingSucceeded = configJson.Parse(config.c_str());
+    ASSERT_EQ(parsingSucceeded, true);
+
+    const auto modelConfigList = configJson.FindMember("model_config_list");
+    ASSERT_NE(modelConfigList, configJson.MemberEnd());
+    const auto& configs = modelConfigList->value.GetArray();
+    ASSERT_EQ(configs.Size(), 1);
+    ovms::ModelConfig modelConfig;
+    auto status = modelConfig.parseNode(configs[0]["config"]);
+
+    ASSERT_EQ(status, ovms::StatusCode::OK);
+    EXPECT_EQ(modelConfig.getShapes().size(), 0);
 }

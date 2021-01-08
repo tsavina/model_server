@@ -18,11 +18,14 @@
 #include <filesystem>
 #include <map>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <tuple>
 #include <unordered_map>
 #include <vector>
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include <inference_engine.hpp>
 #include <spdlog/spdlog.h>
 
@@ -74,18 +77,9 @@ constexpr const ovms::model_version_t UNUSED_MODEL_VERSION = 42;  // Answer to t
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
-static ovms::tensor_map_t prepareTensors(
+ovms::tensor_map_t prepareTensors(
     const std::unordered_map<std::string, ovms::shape_t>&& tensors,
-    InferenceEngine::Precision precision = InferenceEngine::Precision::FP32) {
-    ovms::tensor_map_t result;
-    for (const auto& kv : tensors) {
-        result[kv.first] = std::make_shared<ovms::TensorInfo>(
-            kv.first,
-            precision,
-            kv.second);
-    }
-    return result;
-}
+    InferenceEngine::Precision precision = InferenceEngine::Precision::FP32);
 
 static tensorflow::serving::PredictRequest preparePredictRequest(inputs_info_t requestInputs) {
     tensorflow::serving::PredictRequest request;
@@ -105,6 +99,12 @@ static tensorflow::serving::PredictRequest preparePredictRequest(inputs_info_t r
     return request;
 }
 
+void checkDummyResponse(const std::string outputName,
+    const std::vector<float>& requestData,
+    tensorflow::serving::PredictRequest& request, tensorflow::serving::PredictResponse& response, int seriesLength, int batchSize = 1);
+
+std::string readableError(const float* expected_output, const float* actual_output, const size_t size);
+
 static std::vector<int> asVector(const tensorflow::TensorShapeProto& proto) {
     std::vector<int> shape;
     for (int i = 0; i < proto.dim_size(); i++) {
@@ -120,18 +120,7 @@ static std::vector<google::protobuf::int32> asVector(google::protobuf::RepeatedF
 }
 
 // returns path to a file.
-static std::string createConfigFileWithContent(const std::string& content, std::string filename = "/tmp/ovms_config_file.json") {
-    std::ofstream configFile{filename};
-    SPDLOG_INFO("Creating config file:{}\n with content:\n{}", filename, content);
-    configFile << content << std::endl;
-    configFile.close();
-    if (configFile.fail()) {
-        SPDLOG_INFO("Closing configFile failed");
-    } else {
-        SPDLOG_INFO("Closing configFile succeed");
-    }
-    return filename;
-}
+std::string createConfigFileWithContent(const std::string& content, std::string filename = "/tmp/ovms_config_file.json");
 #pragma GCC diagnostic pop
 
 template <typename T>
@@ -150,8 +139,42 @@ public:
     ConstructorEnabledModelManager() :
         ovms::ModelManager() {}
     ~ConstructorEnabledModelManager() {
-        SPDLOG_INFO("Destructor of modelmanager(Enabled one). Models #:{}", models.size());
+        join();
+        spdlog::info("Destructor of modelmanager(Enabled one). Models #:{}", models.size());
         models.clear();
-        SPDLOG_INFO("Destructor of modelmanager(Enabled one). Models #:{}", models.size());
+        spdlog::info("Destructor of modelmanager(Enabled one). Models #:{}", models.size());
+    }
+    ovms::Status loadConfig(const std::string& jsonFilename) {
+        return ModelManager::loadConfig(jsonFilename);
+    }
+
+    /**
+     * @brief Updates OVMS configuration with cached configuration file. Will check for newly added model versions
+     */
+    void updateConfigurationWithoutConfigFile() {
+        ModelManager::updateConfigurationWithoutConfigFile();
     }
 };
+class TestWithTempDir : public ::testing::Test {
+protected:
+    void SetUp() override {
+        const ::testing::TestInfo* const test_info =
+            ::testing::UnitTest::GetInstance()->current_test_info();
+        std::stringstream ss;
+        ss << std::string(test_info->test_suite_name())
+           << "/"
+           << std::string(test_info->name());
+        const std::string directoryName = ss.str();
+        directoryPath = "/tmp/" + directoryName;
+        std::filesystem::remove_all(directoryPath);
+        std::filesystem::create_directories(directoryPath);
+    }
+
+    void TearDown() override {
+        std::filesystem::remove_all(directoryPath);
+    }
+
+    std::string directoryPath;
+};
+
+void waitForOVMSConfigReload(ovms::ModelManager& manager);

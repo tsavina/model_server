@@ -53,6 +53,7 @@ enum class StatusCode {
     ANONYMOUS_FIXED_SHAPE_NOT_ALLOWED,      /*!< Anonymous fixed shape is invalid for models with multiple inputs */
     CONFIG_SHAPE_IS_NOT_IN_NETWORK,         /*!< Invalid shape dimension number or dimension value */
     CANNOT_LOAD_NETWORK_INTO_TARGET_DEVICE, /*!< Cannot load network into target device */
+    REQUESTED_DYNAMIC_PARAMETERS_ON_SUBSCRIBED_MODEL,
 
     // Model management
     MODEL_MISSING,                    /*!< Model with such name and/or version does not exist */
@@ -83,6 +84,7 @@ enum class StatusCode {
     // Serialization
     OV_UNSUPPORTED_SERIALIZATION_PRECISION, /*!< Unsupported serializaton precision */
     OV_INTERNAL_SERIALIZATION_ERROR,        /*!< Error occurred during serialization */
+    OV_CLONE_BLOB_ERROR,                    /*!< Error during blob clone */
 
     // GetModelStatus
     INVALID_SIGNATURE_DEF, /*!< Requested signature is not supported */
@@ -154,17 +156,38 @@ enum class StatusCode {
     REST_UNSUPPORTED_PRECISION,          /*!< Unsupported conversion from tensor_content to _val container */
     REST_SERIALIZE_TENSOR_CONTENT_INVALID_SIZE,
 
+    // Pipeline validation errors
     PIPELINE_DEFINITION_ALREADY_EXIST,
     PIPELINE_NODE_WRONG_KIND_CONFIGURATION,
     PIPELINE_MULTIPLE_ENTRY_NODES,
     PIPELINE_MULTIPLE_EXIT_NODES,
     PIPELINE_MISSING_ENTRY_OR_EXIT,
     PIPELINE_DEFINITION_NAME_MISSING,
+    PIPELINE_DEFINITION_NOT_LOADED_ANYMORE,
+    PIPELINE_DEFINITION_NOT_LOADED_YET,
     PIPELINE_NODE_NAME_DUPLICATE,
     PIPELINE_STREAM_ID_NOT_READY_YET,
     PIPELINE_CYCLE_FOUND,
     PIPELINE_CONTAINS_UNCONNECTED_NODES,
-    PIPELINE_DEFINITION_MISSING_DEPENDENCY_MAPPING,
+    PIPELINE_NODE_REFERING_TO_MISSING_NODE,
+    PIPELINE_NODE_REFERING_TO_MISSING_MODEL,
+    PIPELINE_NODE_REFERING_TO_MISSING_DATA_SOURCE,
+    PIPELINE_NODE_REFERING_TO_MISSING_MODEL_OUTPUT,
+    PIPELINE_CONNECTION_TO_MISSING_MODEL_INPUT,
+    PIPELINE_NOT_ALL_INPUTS_CONNECTED,
+    PIPELINE_MODEL_INPUT_CONNECTED_TO_MULTIPLE_DATA_SOURCES,
+    PIPELINE_EXIT_USED_AS_NODE_DEPENDENCY,
+    PIPELINE_NAME_OCCUPIED,
+
+    // Custom Loader
+    CUSTOM_LOADER_LIBRARY_INVALID,
+    CUSTOM_LOADER_LIBRARY_LOAD_FAILED,
+    CUSTOM_LOADER_EXISTS,
+    CUSTOM_LOADER_NOT_PRESENT,
+    CUSTOM_LOADER_INIT_FAILED,
+    CUSTOM_LOADER_ERROR,
+
+    STATUS_CODE_END
 };
 
 class Status {

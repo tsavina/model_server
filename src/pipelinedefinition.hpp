@@ -15,8 +15,11 @@
 //*****************************************************************************
 #pragma once
 
+#include <atomic>
+#include <condition_variable>
 #include <memory>
 #include <set>
+#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -30,6 +33,8 @@
 #include "model_version_policy.hpp"
 #include "node.hpp"
 #include "pipeline.hpp"
+#include "pipelinedefinitionstatus.hpp"
+#include "pipelinedefinitionunloadguard.hpp"
 #include "status.hpp"
 
 namespace ovms {
@@ -68,36 +73,90 @@ struct NodeInfo {
 };
 
 class PipelineDefinition {
-    std::string pipelineName;
+    struct ValidationResultNotifier {
+        ValidationResultNotifier(PipelineDefinitionStatus& status, std::condition_variable& loadedNotify) :
+            status(status),
+            loadedNotify(loadedNotify) {}
+        ~ValidationResultNotifier() {
+            if (passed) {
+                status.handle(ValidationPassedEvent());
+                loadedNotify.notify_all();
+            } else {
+                status.handle(ValidationFailedEvent());
+            }
+        }
+        bool passed = false;
+
+    private:
+        PipelineDefinitionStatus& status;
+        std::condition_variable& loadedNotify;
+    };
+
+    const std::string pipelineName;
     std::vector<NodeInfo> nodeInfos;
     pipeline_connections_t connections;
-    std::set<std::pair<const std::string, model_version_t>> subscriptions;
+
+    std::atomic<uint64_t> requestsHandlesCounter = 0;
+    std::shared_mutex loadMtx;
+
+    std::condition_variable loadedNotify;
+
+    // Pipelines are not versioned and any available definition has constant version equal 1.
+    static constexpr model_version_t VERSION = 1;
+
+protected:
+    PipelineDefinitionStatus status;
 
 private:
-    Status validateNode(ModelManager& manager, NodeInfo& node);
+    std::set<std::pair<const std::string, model_version_t>> subscriptions;
+
+    Status validateNode(ModelManager& manager, const NodeInfo& node);
 
 public:
+    static constexpr uint64_t WAIT_FOR_LOADED_DEFAULT_TIMEOUT_MICROSECONDS = 10000;
     PipelineDefinition(const std::string& pipelineName,
         const std::vector<NodeInfo>& nodeInfos,
         const pipeline_connections_t& connections) :
         pipelineName(pipelineName),
         nodeInfos(nodeInfos),
-        connections(connections) {}
+        connections(connections),
+        status(this->pipelineName) {}
 
     Status create(std::unique_ptr<Pipeline>& pipeline,
         const tensorflow::serving::PredictRequest* request,
         tensorflow::serving::PredictResponse* response,
-        ModelManager& manager) const;
-
+        ModelManager& manager);
+    Status reload(ModelManager& manager, const std::vector<NodeInfo>&& nodeInfos, const pipeline_connections_t&& connections);
+    void retire(ModelManager& manager);
+    Status validate(ModelManager& manager);
     Status validateNodes(ModelManager& manager);
     Status validateForCycles();
     const std::string& getName() const { return pipelineName; }
+    const PipelineDefinitionStateCode getStateCode() const { return status.getStateCode(); }
+    const model_version_t getVersion() const { return VERSION; }
 
-    void notifyUsedModelChanged() {}
+    void notifyUsedModelChanged(const std::string& ownerDetails) {
+        this->status.handle(UsedModelChangedEvent(ownerDetails));
+    }
+
+    const PipelineDefinitionStatus& getStatus() const {
+        return this->status;
+    }
 
     void makeSubscriptions(ModelManager& manager);
     void resetSubscriptions(ModelManager& manager);
 
-    Status getInputsInfo(tensor_map_t& inputsInfo, ModelManager& manager) const;
+    virtual Status getInputsInfo(tensor_map_t& inputsInfo, const ModelManager& manager) const;
+    virtual Status getOutputsInfo(tensor_map_t& outputsInfo, const ModelManager& manager) const;
+
+    void increaseRequestsHandlesCount() {
+        ++requestsHandlesCounter;
+    }
+
+    void decreaseRequestsHandlesCount() {
+        --requestsHandlesCounter;
+    }
+
+    Status waitForLoaded(std::unique_ptr<PipelineDefinitionUnloadGuard>& unloadGuard, const uint waitForLoadedTimeoutMicroseconds = WAIT_FOR_LOADED_DEFAULT_TIMEOUT_MICROSECONDS);
 };
 }  // namespace ovms

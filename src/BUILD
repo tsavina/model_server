@@ -20,6 +20,10 @@ cc_library(
     srcs = [
         "config.cpp",
         "config.hpp",
+        "customloaderconfig.hpp",
+	"customloaders.hpp",
+	"customloaders.cpp",
+        "customloaderinterface.hpp",
         "deserialization.hpp",
         "dl_node.cpp",
         "dl_node.hpp",
@@ -67,6 +71,9 @@ cc_library(
         "pipeline.hpp",
         "pipelinedefinition.cpp",
         "pipelinedefinition.hpp",
+        "pipelinedefinitionstatus.hpp",
+        "pipelinedefinitionunloadguard.cpp",
+        "pipelinedefinitionunloadguard.hpp",
         "pipeline_factory.cpp",
         "pipeline_factory.hpp",
         "prediction_service.cpp",
@@ -95,6 +102,8 @@ cc_library(
         "threadsafequeue.hpp",
         "timer.hpp",
         "version.hpp",
+        "logging.hpp",
+        "logging.cpp",
     ],
     deps = [
         "@tensorflow_serving//tensorflow_serving/apis:prediction_service_cc_proto",
@@ -118,12 +127,24 @@ cc_library(
         "@openvino//:openvino",
     ],
     local_defines = [
-        "SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_INFO"
+        "SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_DEBUG"
     ],
     copts = [
         "-Wall",
         "-Wno-unknown-pragmas",
         "-Werror",
+    ],
+)
+
+cc_binary(
+    name = "libsampleloader.so",
+    srcs = [
+	"example/SampleCustomLoader/sampleCustLoader.cpp",
+	"customloaderinterface.hpp",
+    ],
+    linkshared = 1,
+    deps = [
+        "@rapidjson//:rapidjson",
     ],
 )
 
@@ -155,7 +176,9 @@ cc_test(
         "test/ensemble_tests.cpp",
         "test/ensemble_mapping_config_tests.cpp",
         "test/ensemble_metadata_test.cpp",
+        "test/ensemble_config_change_stress.cpp",
         "test/get_model_metadata_response_test.cpp",
+        "test/get_pipeline_metadata_response_test.cpp",
         "test/get_model_metadata_signature_test.cpp",
         "test/get_model_metadata_validation_test.cpp",
         "test/mockmodelinstancechangingstates.hpp",
@@ -173,19 +196,23 @@ cc_test(
         "test/ovtestutils.hpp",
         "test/ovinferrequestqueue_test.cpp",
         "test/ov_utils_test.cpp",
+        "test/pipelinedefinitionstatus_test.cpp",
         "test/predict_validation_test.cpp",
         "test/prediction_service_test.cpp",
         "test/prediction_service_utils_test.cpp",
+        "test/custom_loader_test.cpp",
         "test/rest_parser_row_test.cpp",
         "test/rest_parser_column_test.cpp",
         "test/rest_parser_nonamed_test.cpp",
         "test/rest_utils_test.cpp",
         "test/serialization_tests.cpp",
         "test/stringutils_test.cpp",
+        "test/test_utils.cpp",
         "test/test_utils.hpp",
         "test/threadsafequeue_test.cpp",
         "test/unit_tests.cpp",
         "test/schema_test.cpp",
+        "test/environment.hpp",
     ],
     data = [
         "test/dummy/1/dummy.xml",
@@ -201,6 +228,7 @@ cc_test(
     ],
     deps = [
         "//src:ovms_lib",
+        "//src:libsampleloader.so",
         "@com_google_googletest//:gtest",
     ],
     copts = [

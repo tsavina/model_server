@@ -47,10 +47,21 @@ void addStatusToResponse(tensorflow::serving::GetModelStatusResponse* response, 
     status_to_fill->mutable_status()->set_error_message(model_version_status.getErrorMsg());
 }
 
+void addStatusToResponse(tensorflow::serving::GetModelStatusResponse* response, const model_version_t version, const PipelineDefinitionStatus& pipeline_status) {
+    auto [state, error_code] = pipeline_status.convertToModelStatus();
+    SPDLOG_DEBUG("add_status_to_response state={} error_code", state, error_code);
+    auto status_to_fill = response->add_model_version_status();
+    status_to_fill->set_state(static_cast<tensorflow::serving::ModelVersionStatus_State>(static_cast<int>(state)));
+    status_to_fill->set_version(version);
+    status_to_fill->clear_status();
+    status_to_fill->mutable_status()->set_error_code(static_cast<tensorflow::error::Code>(static_cast<int>(error_code)));
+    status_to_fill->mutable_status()->set_error_message(ModelVersionStatusErrorCodeToString(error_code));
+}
+
 ::grpc::Status ModelServiceImpl::GetModelStatus(
     ::grpc::ServerContext* context, const tensorflow::serving::GetModelStatusRequest* request,
     tensorflow::serving::GetModelStatusResponse* response) {
-    return GetModelStatusImpl::getModelStatus(request, response).grpc();
+    return GetModelStatusImpl::getModelStatus(request, response, ModelManager::getInstance()).grpc();
 }
 
 Status GetModelStatusImpl::createGrpcRequest(std::string model_name, const std::optional<int64_t> model_version, tensorflow::serving::GetModelStatusRequest* request) {
@@ -67,22 +78,33 @@ Status GetModelStatusImpl::serializeResponse2Json(const tensorflow::serving::Get
     opts.always_print_primitive_fields = true;
     const auto& status = MessageToJsonString(*response, output, opts);
     if (!status.ok()) {
-        spdlog::error("Failed to convert proto to json. Error: ", status.ToString());
+        SPDLOG_ERROR("Failed to convert proto to json. Error: ", status.ToString());
         return StatusCode::JSON_SERIALIZATION_ERROR;
     }
     return StatusCode::OK;
 }
 
-Status GetModelStatusImpl::getModelStatus(const tensorflow::serving::GetModelStatusRequest* request, tensorflow::serving::GetModelStatusResponse* response) {
+Status GetModelStatusImpl::getModelStatus(
+    const tensorflow::serving::GetModelStatusRequest* request,
+    tensorflow::serving::GetModelStatusResponse* response,
+    ModelManager& manager) {
     SPDLOG_DEBUG("model_service: request: {}", request->DebugString());
 
     bool has_requested_version = request->model_spec().has_version();
     auto requested_version = request->model_spec().version().value();
     std::string requested_model_name = request->model_spec().name();
-    auto model_ptr = ModelManager::getInstance().findModelByName(requested_model_name);
+    auto model_ptr = manager.findModelByName(requested_model_name);
     if (!model_ptr) {
-        SPDLOG_INFO("requested model {} was not found", requested_model_name);
-        return StatusCode::MODEL_NAME_MISSING;
+        SPDLOG_DEBUG("GetModelStatus: Model {} is missing, trying to find pipeline with such name", requested_model_name);
+        auto pipelineDefinition = manager.getPipelineFactory().findDefinitionByName(requested_model_name);
+        if (!pipelineDefinition) {
+            return StatusCode::MODEL_NAME_MISSING;
+        }
+
+        addStatusToResponse(response, pipelineDefinition->getVersion(), pipelineDefinition->getStatus());
+        SPDLOG_DEBUG("model_service: response: {}", response->DebugString());
+        SPDLOG_DEBUG("MODEL_STATUS created a response for {} - {}", requested_model_name, requested_version);
+        return StatusCode::OK;
     }
 
     SPDLOG_DEBUG("requested model: {}, has_version: {} (version: {})", requested_model_name, has_requested_version, requested_version);
@@ -90,7 +112,7 @@ Status GetModelStatusImpl::getModelStatus(const tensorflow::serving::GetModelSta
         // return details only for a specific version of requested model; NOT_FOUND otherwise. If requested_version == 0, default is returned.
         std::shared_ptr<ModelInstance> model_instance = model_ptr->getModelInstanceByVersion(requested_version);
         if (!model_instance) {
-            SPDLOG_INFO("requested model {} in version {} was not found.", requested_model_name, requested_version);
+            SPDLOG_WARN("requested model {} in version {} was not found.", requested_model_name, requested_version);
             return StatusCode::MODEL_VERSION_MISSING;
         }
         const auto& status = model_instance->getStatus();
@@ -113,7 +135,7 @@ Status GetModelStatusImpl::getModelStatus(const tensorflow::serving::GetModelSta
 ::grpc::Status ModelServiceImpl::HandleReloadConfigRequest(
     ::grpc::ServerContext* context, const tensorflow::serving::ReloadConfigRequest* request,
     tensorflow::serving::ReloadConfigResponse* response) {
-    spdlog::info("Requested HandleReloadConfigRequest - but this service is reloading config automatically by itself, therefore this operation has no *EXTRA* affect.");
+    SPDLOG_INFO("Requested HandleReloadConfigRequest - but this service is reloading config automatically by itself, therefore this operation has no *EXTRA* affect.");
     return grpc::Status::OK;  // we're reloading config all the time; for a total client compatibility, this means returning success here.
 }
 

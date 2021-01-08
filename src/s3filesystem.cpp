@@ -38,8 +38,8 @@
 #include <aws/s3/model/HeadBucketRequest.h>
 #include <aws/s3/model/HeadObjectRequest.h>
 #include <aws/s3/model/ListObjectsRequest.h>
-#include <spdlog/spdlog.h>
 
+#include "logging.hpp"
 #include "stringutils.hpp"
 
 namespace ovms {
@@ -51,6 +51,12 @@ const std::string S3FileSystem::S3_URL_PREFIX = "s3://";
 
 StatusCode S3FileSystem::parsePath(const std::string& path, std::string* bucket, std::string* object) {
     std::smatch sm;
+
+    if (isPathEscaped(path)) {
+        SPDLOG_LOGGER_ERROR(s3_logger, "Path {} escape with .. is forbidden.", path);
+        return StatusCode::PATH_INVALID;
+    }
+
     if (!std::regex_match(path, sm, s3_regex_)) {
         int bucket_start = path.find(S3_URL_PREFIX) + S3_URL_PREFIX.size();
         int bucket_end = path.find("/", bucket_start);
@@ -68,7 +74,7 @@ StatusCode S3FileSystem::parsePath(const std::string& path, std::string* bucket,
     }
 
     if (bucket->empty()) {
-        spdlog::error("No bucket name found in path {}", path);
+        SPDLOG_LOGGER_ERROR(s3_logger, "No bucket name found in path {}", path);
 
         return StatusCode::S3_BUCKET_NOT_FOUND;
     }
@@ -137,7 +143,7 @@ S3FileSystem::S3FileSystem(const Aws::SDKOptions& options, const std::string& s3
                 config.proxyPassword = sm[4].str();
             }
         } else {
-            spdlog::warn("Couldn't parse proxy: {}", default_proxy);
+            SPDLOG_LOGGER_ERROR(s3_logger, "Couldn't parse proxy: {}", default_proxy);
         }
     }
 
@@ -202,8 +208,8 @@ StatusCode S3FileSystem::isDirectory(const std::string& path, bool* is_dir) {
 
     auto head_bucket_outcome = client_.HeadBucket(head_request);
     if (!head_bucket_outcome.IsSuccess()) {
-        spdlog::error("Couldn't get MetaData for bucket with name {}", bucket);
-        spdlog::error("{}", head_bucket_outcome.GetError().GetMessage());
+        SPDLOG_LOGGER_ERROR(s3_logger, "Couldn't get MetaData for bucket with name {}", bucket);
+        SPDLOG_LOGGER_ERROR(s3_logger, "{}", head_bucket_outcome.GetError().GetMessage());
         return StatusCode::S3_METADATA_FAIL;
     }
 
@@ -222,7 +228,7 @@ StatusCode S3FileSystem::isDirectory(const std::string& path, bool* is_dir) {
     if (list_objects_outcome.IsSuccess()) {
         *is_dir = !list_objects_outcome.GetResult().GetContents().empty();
     } else {
-        spdlog::error("Failed to list objects with prefix {}", path);
+        SPDLOG_LOGGER_ERROR(s3_logger, "Failed to list objects with prefix {}", path);
         return StatusCode::S3_FAILED_LIST_OBJECTS;
     }
 
@@ -265,7 +271,7 @@ StatusCode S3FileSystem::getDirectoryContents(const std::string& path, std::set<
             contents->insert(item);
         }
     } else {
-        spdlog::error("Could not list contents of directory {}", true_path);
+        SPDLOG_LOGGER_ERROR(s3_logger, "Could not list contents of directory {}", true_path);
         return StatusCode::S3_INVALID_ACCESS;
     }
 
@@ -341,7 +347,7 @@ StatusCode S3FileSystem::readTextFile(const std::string& path, std::string* cont
     }
 
     if (!exists) {
-        spdlog::error("File does not exist at {}", path);
+        SPDLOG_LOGGER_ERROR(s3_logger, "File does not exist at {}", path);
         return StatusCode::S3_FILE_NOT_FOUND;
     }
 
@@ -368,7 +374,7 @@ StatusCode S3FileSystem::readTextFile(const std::string& path, std::string* cont
 
         *contents = data;
     } else {
-        spdlog::error("Failed to get object at {}", path);
+        SPDLOG_LOGGER_ERROR(s3_logger, "Failed to get object at {}", path);
         return StatusCode::S3_FILE_INVALID;
     }
 
@@ -382,7 +388,7 @@ StatusCode S3FileSystem::downloadFileFolder(const std::string& path, const std::
         return status;
     }
     if (!exists) {
-        spdlog::error("File/folder does not exist at {}", path);
+        SPDLOG_LOGGER_ERROR(s3_logger, "File/folder does not exist at {}", path);
         return StatusCode::S3_FILE_NOT_FOUND;
     }
 
@@ -423,7 +429,7 @@ StatusCode S3FileSystem::downloadFileFolder(const std::string& path, const std::
                 // Create local mirror of sub-directories
                 int status = mkdir(const_cast<char*>(local_fpath.c_str()), S_IRUSR | S_IWUSR | S_IXUSR);
                 if (status == -1) {
-                    spdlog::error("Failed to create local folder: {} {} ", local_fpath, strerror(errno));
+                    SPDLOG_LOGGER_ERROR(s3_logger, "Failed to create local folder: {} {} ", local_fpath, strerror(errno));
                     return StatusCode::PATH_INVALID;
                 }
 
@@ -466,7 +472,7 @@ StatusCode S3FileSystem::downloadFileFolder(const std::string& path, const std::
                     output_file << retrieved_file.rdbuf();
                     output_file.close();
                 } else {
-                    spdlog::error("Failed to get object at {}", *iter);
+                    SPDLOG_LOGGER_ERROR(s3_logger, "Failed to get object at {}", *iter);
                     return StatusCode::S3_FAILED_GET_OBJECT;
                 }
             }
@@ -490,7 +496,7 @@ StatusCode S3FileSystem::downloadFileFolder(const std::string& path, const std::
             output_file << retrieved_file.rdbuf();
             output_file.close();
         } else {
-            spdlog::error("Failed to get object at {}", effective_path);
+            SPDLOG_LOGGER_ERROR(s3_logger, "Failed to get object at {}", effective_path);
             return StatusCode::S3_FAILED_GET_OBJECT;
         }
     }
@@ -503,7 +509,7 @@ StatusCode S3FileSystem::downloadModelVersions(const std::string& path,
     const std::vector<model_version_t>& versions) {
     auto sc = createTempPath(local_path);
     if (sc != StatusCode::OK) {
-        spdlog::error("Failed to create a temporary path {}", sc);
+        SPDLOG_LOGGER_ERROR(s3_logger, "Failed to create a temporary path {}", sc);
         return sc;
     }
 
@@ -523,7 +529,7 @@ StatusCode S3FileSystem::downloadModelVersions(const std::string& path,
         auto status = downloadFileFolder(versionpath, lpath);
         if (status != StatusCode::OK) {
             result = status;
-            spdlog::error("Failed to download model version {}", versionpath);
+            SPDLOG_LOGGER_ERROR(s3_logger, "Failed to download model version {}", versionpath);
         }
     }
 

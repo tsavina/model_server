@@ -17,6 +17,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <shared_mutex>
 #include <string>
 #include <unordered_map>
@@ -56,6 +57,31 @@ public:
         const tensorflow::serving::PredictRequest* request,
         tensorflow::serving::PredictResponse* response,
         ModelManager& manager) const;
+
+    PipelineDefinition* findDefinitionByName(const std::string& name) const {
+        std::shared_lock lock(definitionsMtx);
+        auto it = definitions.find(name);
+        if (it == std::end(definitions)) {
+            return nullptr;
+        } else {
+            return it->second.get();
+        }
+    }
+    Status reloadDefinition(const std::string& pipelineName,
+        const std::vector<NodeInfo>&& nodeInfos,
+        const pipeline_connections_t&& connections,
+        ModelManager& manager);
+
+    void retireOtherThan(std::set<std::string>&& pipelinesInConfigFile, ModelManager& manager) {
+        std::for_each(definitions.begin(),
+            definitions.end(),
+            [&pipelinesInConfigFile, &manager](auto& nameDefinitionPair) {
+                if (pipelinesInConfigFile.find(nameDefinitionPair.second->getName()) == pipelinesInConfigFile.end() && nameDefinitionPair.second->getStateCode() != PipelineDefinitionStateCode::RETIRED) {
+                    nameDefinitionPair.second->retire(manager);
+                }
+            });
+    }
+    void revalidatePipelines(ModelManager&);
 };
 
 }  // namespace ovms

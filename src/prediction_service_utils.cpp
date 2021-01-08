@@ -35,7 +35,7 @@ namespace ovms {
 size_t getRequestBatchSize(const tensorflow::serving::PredictRequest* request) {
     auto requestInputItr = request->inputs().begin();
     if (requestInputItr == request->inputs().end()) {
-        SPDLOG_ERROR("Failed to get batch size of a request. Validation of request failed");
+        SPDLOG_WARN("Failed to get batch size of a request. Validation of request failed");
         return 0;
     }
     auto& requestInput = requestInputItr->second;  // assuming same batch size for all inputs
@@ -61,7 +61,7 @@ Status getModelInstance(ovms::ModelManager& manager,
     ovms::model_version_t modelVersionId,
     std::shared_ptr<ovms::ModelInstance>& modelInstance,
     std::unique_ptr<ModelInstanceUnloadGuard>& modelInstanceUnloadGuardPtr) {
-    SPDLOG_INFO("Requesting model:{}; version:{}.", modelName, modelVersionId);
+    SPDLOG_DEBUG("Requesting model: {}; version: {}.", modelName, modelVersionId);
 
     auto model = manager.findModelByName(modelName);
     if (model == nullptr) {
@@ -78,6 +78,7 @@ Status getModelInstance(ovms::ModelManager& manager,
             return StatusCode::MODEL_VERSION_MISSING;
         }
     }
+
     return modelInstance->waitForLoaded(WAIT_FOR_MODEL_LOADED_TIMEOUT_MS, modelInstanceUnloadGuardPtr);
 }
 
@@ -86,7 +87,7 @@ Status getPipeline(ovms::ModelManager& manager,
     const tensorflow::serving::PredictRequest* request,
     tensorflow::serving::PredictResponse* response) {
 
-    SPDLOG_INFO("Requesting pipeline: {};", request->model_spec().name());
+    SPDLOG_DEBUG("Requesting pipeline: {};", request->model_spec().name());
     auto status = manager.createPipeline(pipelinePtr, request->model_spec().name(), request, response);
     return status;
 }
@@ -127,7 +128,7 @@ Status inference(
     int executingInferId = executingStreamIdGuard.getId();
     InferenceEngine::InferRequest& inferRequest = inferRequestsQueue.getInferRequest(executingInferId);
     timer.stop("get infer request");
-    spdlog::debug("Getting infer req duration in model {}, version {}, nireq {}: {:.3f} ms",
+    SPDLOG_DEBUG("Getting infer req duration in model {}, version {}, nireq {}: {:.3f} ms",
         requestProto->model_spec().name(), modelVersion.getVersion(), executingInferId, timer.elapsed<microseconds>("get infer request") / 1000);
 
     timer.start("deserialize");
@@ -135,14 +136,14 @@ Status inference(
     timer.stop("deserialize");
     if (!status.ok())
         return status;
-    spdlog::debug("Deserialization duration in model {}, version {}, nireq {}: {:.3f} ms",
+    SPDLOG_DEBUG("Deserialization duration in model {}, version {}, nireq {}: {:.3f} ms",
         requestProto->model_spec().name(), modelVersion.getVersion(), executingInferId, timer.elapsed<microseconds>("deserialize") / 1000);
     timer.start("prediction");
     status = performInference(inferRequestsQueue, executingInferId, inferRequest);
     timer.stop("prediction");
     if (!status.ok())
         return status;
-    spdlog::debug("Prediction duration in model {}, version {}, nireq {}: {:.3f} ms",
+    SPDLOG_DEBUG("Prediction duration in model {}, version {}, nireq {}: {:.3f} ms",
         requestProto->model_spec().name(), modelVersion.getVersion(), executingInferId, timer.elapsed<microseconds>("prediction") / 1000);
 
     timer.start("serialize");
@@ -150,7 +151,7 @@ Status inference(
     timer.stop("serialize");
     if (!status.ok())
         return status;
-    spdlog::debug("Serialization duration in model {}, version {}, nireq {}: {:.3f} ms",
+    SPDLOG_DEBUG("Serialization duration in model {}, version {}, nireq {}: {:.3f} ms",
         requestProto->model_spec().name(), modelVersion.getVersion(), executingInferId, timer.elapsed<microseconds>("serialize") / 1000);
 
     return StatusCode::OK;
@@ -173,7 +174,7 @@ Status reloadModelIfRequired(
             SPDLOG_ERROR("Model instance reload (reshape) failed. Status Code: {}, Error: {}", status.getCode(), status.string());
         }
     } else if (!status.ok()) {
-        SPDLOG_INFO("Validation of inferRequest failed. Status Code: {}, Error: {}", status.getCode(), status.string());
+        SPDLOG_WARN("Validation of inferRequest failed. Status Code: {}, Error: {}", status.getCode(), status.string());
     }
     return status;
 }

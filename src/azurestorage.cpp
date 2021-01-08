@@ -18,10 +18,23 @@
 #include <memory>
 
 #include "azurefilesystem.hpp"
+#include "logging.hpp"
 
 namespace ovms {
 
 using namespace utility;
+
+const std::string UNAVAILABLE_PATH_ERROR = "Unable to access path: {}";
+
+const std::string AzureStorageAdapter::extractAzureStorageExceptionMessage(const as::storage_exception& e) {
+    as::request_result result = e.result();
+    as::storage_extended_error extended_error = result.extended_error();
+    if (!extended_error.message().empty()) {
+        return extended_error.message();
+    } else {
+        return e.what();
+    }
+}
 
 std::string AzureStorageAdapter::joinPath(std::initializer_list<std::string> segments) {
     std::string joined;
@@ -50,7 +63,7 @@ StatusCode AzureStorageAdapter::CreateLocalDir(const std::string& path) {
     int status =
         mkdir(const_cast<char*>(path.c_str()), S_IRUSR | S_IWUSR | S_IXUSR);
     if (status == -1) {
-        SPDLOG_ERROR("Failed to create local folder: {} {} ", path,
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Failed to create local folder: {} {} ", path,
             strerror(errno));
         return StatusCode::PATH_INVALID;
     }
@@ -69,9 +82,14 @@ AzureStorageBlob::AzureStorageBlob(const std::string& path, as::cloud_storage_ac
 
 StatusCode AzureStorageBlob::checkPath(const std::string& path) {
     try {
+        if (FileSystem::isPathEscaped(path)) {
+            SPDLOG_LOGGER_ERROR(azurestorage_logger, "Path {} escape with .. is forbidden.", path);
+            return StatusCode::PATH_INVALID;
+        }
+
         auto status = this->parseFilePath(path);
         if (status != StatusCode::OK) {
-            SPDLOG_WARN("AS: Unable to parse path: {} -> {}", fullPath_,
+            SPDLOG_LOGGER_WARN(azurestorage_logger, "Unable to parse path: {} -> {}", fullPath_,
                 ovms::Status(status).string());
             return status;
         }
@@ -79,7 +97,7 @@ StatusCode AzureStorageBlob::checkPath(const std::string& path) {
         as_container_ = as_blob_client_.get_container_reference(container_);
 
         if (!as_container_.exists()) {
-            SPDLOG_WARN("AS: container does not exist: {} -> {}", fullPath_, container_);
+            SPDLOG_LOGGER_WARN(azurestorage_logger, "Container does not exist: {} -> {}", fullPath_, container_);
             return StatusCode::AS_CONTAINER_NOT_FOUND;
         }
 
@@ -87,14 +105,9 @@ StatusCode AzureStorageBlob::checkPath(const std::string& path) {
 
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -111,21 +124,16 @@ StatusCode AzureStorageBlob::fileExists(bool* exists) {
 
         as_blob_ = as_container_.get_blob_reference(blockpath_);
         if (!as_blob_.exists()) {
-            SPDLOG_WARN("AS: block blob does not exist: {} -> {}", fullPath_, blockpath_);
+            SPDLOG_LOGGER_WARN(azurestorage_logger, "Block blob does not exist: {} -> {}", fullPath_, blockpath_);
             return StatusCode::AS_FILE_NOT_FOUND;
         }
 
         *exists = true;
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -169,14 +177,9 @@ StatusCode AzureStorageBlob::isDirectory(bool* is_directory) {
 
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -192,7 +195,7 @@ StatusCode AzureStorageBlob::fileModificationTime(int64_t* mtime_ns) {
 
         as_blob_ = as_container_.get_blob_reference(blockpath_);
         if (!as_blob_.exists()) {
-            SPDLOG_WARN("AS: block blob does not exist: {} -> {}", fullPath_, blockpath_);
+            SPDLOG_LOGGER_WARN(azurestorage_logger, "Block blob does not exist: {} -> {}", fullPath_, blockpath_);
             return StatusCode::AS_FILE_NOT_FOUND;
         }
 
@@ -202,18 +205,13 @@ StatusCode AzureStorageBlob::fileModificationTime(int64_t* mtime_ns) {
 
         auto nanoseconds = time.to_interval();
 
-        SPDLOG_TRACE("AS: modification time for {} is {}", fullPath_, nanoseconds);
+        SPDLOG_LOGGER_TRACE(azurestorage_logger, "Modification time for {} is {}", fullPath_, nanoseconds);
         *mtime_ns = nanoseconds;
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -250,14 +248,9 @@ StatusCode AzureStorageBlob::getDirectoryContents(files_list_t* contents) {
 
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -292,14 +285,9 @@ StatusCode AzureStorageBlob::getDirectorySubdirs(files_list_t* subdirs) {
 
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -334,14 +322,9 @@ StatusCode AzureStorageBlob::getDirectoryFiles(files_list_t* files) {
 
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -357,7 +340,7 @@ StatusCode AzureStorageBlob::readTextFile(std::string* contents) {
 
         as_blob_ = as_container_.get_blob_reference(blockpath_);
         if (!as_blob_.exists()) {
-            SPDLOG_WARN("AS: block blob does not exist: {} -> {}", fullPath_, blockpath_);
+            SPDLOG_LOGGER_WARN(azurestorage_logger, "Nlock blob does not exist: {} -> {}", fullPath_, blockpath_);
             return StatusCode::AS_FILE_NOT_FOUND;
         }
 
@@ -370,14 +353,9 @@ StatusCode AzureStorageBlob::readTextFile(std::string* contents) {
 
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -390,8 +368,8 @@ StatusCode AzureStorageBlob::downloadFileFolder(const std::string& local_path) {
             return status;
     }
 
-    SPDLOG_INFO(
-        "AS: Downloading dir {} (recursive) and saving a new local path: {}",
+    SPDLOG_LOGGER_DEBUG(azurestorage_logger,
+        "Downloading dir {} (recursive) and saving a new local path: {}",
         fullUri_, local_path);
     return downloadFileFolderTo(local_path);
 }
@@ -406,21 +384,16 @@ StatusCode AzureStorageBlob::deleteFileFolder() {
 
         as_blob_ = as_container_.get_blob_reference(blockpath_);
         if (!as_blob_.exists()) {
-            SPDLOG_WARN("AS: block blob does not exist: {} -> {}", fullPath_, blockpath_);
+            SPDLOG_LOGGER_WARN(azurestorage_logger, "block blob does not exist: {} -> {}", fullPath_, blockpath_);
             return StatusCode::AS_FILE_NOT_FOUND;
         }
 
         as_blob_.delete_blob();
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -447,21 +420,16 @@ StatusCode AzureStorageBlob::downloadFile(const std::string& local_path) {
 
         as_blob_ = as_container_.get_blob_reference(blockpath_);
         if (!as_blob_.exists()) {
-            SPDLOG_WARN("AS: block blob does not exist: {} -> {}", fullPath_, blockpath_);
+            SPDLOG_LOGGER_WARN(azurestorage_logger, "Block blob does not exist: {} -> {}", fullPath_, blockpath_);
             return StatusCode::AS_FILE_NOT_FOUND;
         }
 
         as_blob_.download_to_file(local_path);
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -475,16 +443,16 @@ StatusCode AzureStorageBlob::downloadFileFolderTo(const std::string& local_path)
                 return status;
         }
 
-        SPDLOG_TRACE("AS: Downloading dir {} and saving to {}", fullPath_, local_path);
+        SPDLOG_LOGGER_TRACE(azurestorage_logger, "Downloading dir {} and saving to {}", fullPath_, local_path);
         bool is_dir;
         auto status = this->isDirectory(&is_dir);
         if (status != StatusCode::OK) {
-            SPDLOG_ERROR("File/folder does not exist at {}", fullPath_);
+            SPDLOG_LOGGER_WARN(azurestorage_logger, "File/folder does not exist at {}", fullPath_);
             return StatusCode::AS_FILE_NOT_FOUND;
         }
 
         if (!is_dir) {
-            SPDLOG_ERROR("Path is not a directory: {}", fullPath_);
+            SPDLOG_LOGGER_WARN(azurestorage_logger, "Path is not a directory: {}", fullPath_);
             return StatusCode::AS_FILE_NOT_FOUND;
         }
 
@@ -503,14 +471,14 @@ StatusCode AzureStorageBlob::downloadFileFolderTo(const std::string& local_path)
         for (auto&& d : dirs) {
             std::string remote_dir_path = joinPath({fullUri_, d});
             std::string local_dir_path = joinPath({local_path, d});
-            SPDLOG_TRACE("Processing directory {} from {} -> {}", d, remote_dir_path,
+            SPDLOG_LOGGER_TRACE(azurestorage_logger, "Processing directory {} from {} -> {}", d, remote_dir_path,
                 local_dir_path);
 
             auto factory = std::make_shared<ovms::AzureStorageFactory>();
             auto azureSubdirStorageObj = factory.get()->getNewAzureStorageObject(remote_dir_path, account_);
             status = azureSubdirStorageObj->checkPath(remote_dir_path);
             if (status != StatusCode::OK) {
-                SPDLOG_WARN("AS: Check path failed: {} -> {}", remote_dir_path,
+                SPDLOG_LOGGER_WARN(azurestorage_logger, "Check path failed: {} -> {}", remote_dir_path,
                     ovms::Status(status).string());
                 return status;
             }
@@ -522,7 +490,7 @@ StatusCode AzureStorageBlob::downloadFileFolderTo(const std::string& local_path)
             auto download_dir_status =
                 azureSubdirStorageObj->downloadFileFolderTo(local_dir_path);
             if (download_dir_status != StatusCode::OK) {
-                SPDLOG_ERROR("Unable to download directory from {} to {}",
+                SPDLOG_LOGGER_WARN(azurestorage_logger, "Unable to download directory from {} to {}",
                     remote_dir_path, local_dir_path);
                 return download_dir_status;
             }
@@ -531,14 +499,14 @@ StatusCode AzureStorageBlob::downloadFileFolderTo(const std::string& local_path)
         for (auto&& f : files) {
             std::string remote_file_path = joinPath({fullUri_, f});
             std::string local_file_path = joinPath({local_path, f});
-            SPDLOG_TRACE("Processing file {} from {} -> {}", f, remote_file_path,
+            SPDLOG_LOGGER_TRACE(azurestorage_logger, "Processing file {} from {} -> {}", f, remote_file_path,
                 local_file_path);
 
             auto factory = std::make_shared<ovms::AzureStorageFactory>();
             auto azureFiledirStorageObj = factory.get()->getNewAzureStorageObject(remote_file_path, account_);
             status = azureFiledirStorageObj->checkPath(remote_file_path);
             if (status != StatusCode::OK) {
-                SPDLOG_ERROR("Unable to download directory from {} to {}",
+                SPDLOG_LOGGER_WARN(azurestorage_logger, "Unable to download directory from {} to {}",
                     remote_file_path, local_file_path);
                 return status;
             }
@@ -546,21 +514,16 @@ StatusCode AzureStorageBlob::downloadFileFolderTo(const std::string& local_path)
             auto download_status =
                 azureFiledirStorageObj->downloadFile(local_file_path);
             if (download_status != StatusCode::OK) {
-                SPDLOG_ERROR("Unable to save file from {} to {}", remote_file_path,
+                SPDLOG_LOGGER_WARN(azurestorage_logger, "Unable to save file from {} to {}", remote_file_path,
                     local_file_path);
                 return download_status;
             }
         }
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -584,7 +547,7 @@ StatusCode AzureStorageBlob::parseFilePath(const std::string& path) {
     // az://share/blockpath
     // az://share/
     if (path.back() == '/') {
-        SPDLOG_ERROR("Path can not end with '/'", path);
+        SPDLOG_LOGGER_WARN(azurestorage_logger, "Path can not end with '/'", path);
         return StatusCode::AS_INVALID_PATH;
     }
 
@@ -595,10 +558,10 @@ StatusCode AzureStorageBlob::parseFilePath(const std::string& path) {
         share_start = path.find(AzureFileSystem::AZURE_URL_BLOB_PREFIX) + AzureFileSystem::AZURE_URL_BLOB_PREFIX.size();
     } else if (path.find(AzureFileSystem::AZURE_URL_FILE_PREFIX) != std::string::npos) {
         // File path
-        SPDLOG_ERROR("Wrong object type - az:// prefix in path required, azure:// found:", path);
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Wrong object type - az:// prefix in path required, azure:// found:", path);
         return StatusCode::AS_INVALID_PATH;
     } else {
-        SPDLOG_ERROR("Missing az:// prefix in path:", path);
+        SPDLOG_LOGGER_WARN(azurestorage_logger, "Missing az:// prefix in path:", path);
         return StatusCode::AS_INVALID_PATH;
     }
 
@@ -638,9 +601,14 @@ AzureStorageFile::AzureStorageFile(const std::string& path, as::cloud_storage_ac
 
 StatusCode AzureStorageFile::checkPath(const std::string& path) {
     try {
+        if (FileSystem::isPathEscaped(path)) {
+            SPDLOG_LOGGER_ERROR(azurestorage_logger, "Path {} escape with .. is forbidden.", path);
+            return StatusCode::PATH_INVALID;
+        }
+
         auto status = this->parseFilePath(path);
         if (status != StatusCode::OK) {
-            SPDLOG_WARN("AS: Unable to parse path: {} -> {}", path,
+            SPDLOG_LOGGER_WARN(azurestorage_logger, "Unable to parse path: {} -> {}", path,
                 ovms::Status(status).string());
             return status;
         }
@@ -649,12 +617,12 @@ StatusCode AzureStorageFile::checkPath(const std::string& path) {
         as_share_ = as_file_client_.get_share_reference(share_);
 
         if (!as_share_.exists()) {
-            SPDLOG_WARN("AS: share does not exist: {} -> {}", path, share_);
+            SPDLOG_LOGGER_WARN(azurestorage_logger, "Share does not exist: {} -> {}", path, share_);
             return StatusCode::AS_SHARE_NOT_FOUND;
         }
 
         if (directory_.empty()) {
-            SPDLOG_WARN("AS: directory required in path: {} -> {}", path, directory_);
+            SPDLOG_LOGGER_WARN(azurestorage_logger, "Directory required in path: {} -> {}", path, directory_);
             return StatusCode::AS_INVALID_PATH;
         }
 
@@ -662,14 +630,9 @@ StatusCode AzureStorageFile::checkPath(const std::string& path) {
 
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -703,21 +666,16 @@ StatusCode AzureStorageFile::fileExists(bool* exists) {
 
         as_file1_ = as_last_working_subdir.get_file_reference(file_);
         if (!as_file1_.exists()) {
-            SPDLOG_WARN("AS: file does not exist: {} -> {}", fullPath_, file_);
+            SPDLOG_LOGGER_WARN(azurestorage_logger, "File does not exist: {} -> {}", fullPath_, file_);
             return StatusCode::AS_FILE_NOT_FOUND;
         }
 
         *exists = true;
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -748,16 +706,10 @@ StatusCode AzureStorageFile::isDirectory(bool* is_directory) {
         } catch (const as::storage_exception& e) {
         }
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
-
     return StatusCode::AS_FILE_NOT_FOUND;
 }
 
@@ -771,13 +723,13 @@ StatusCode AzureStorageFile::fileModificationTime(int64_t* mtime_ns) {
 
         as_directory_ = as_share_.get_directory_reference(_XPLATSTR(directory_));
         if (!as_directory_.exists()) {
-            SPDLOG_WARN("AS: directory does not exist: {} -> {}", fullPath_, directory_);
+            SPDLOG_LOGGER_WARN(azurestorage_logger, "Directory does not exist: {} -> {}", fullPath_, directory_);
             return StatusCode::AS_FILE_NOT_FOUND;
         }
 
         as_file1_ = as_directory_.get_file_reference(_XPLATSTR(file_));
         if (!as_file1_.exists()) {
-            SPDLOG_WARN("AS: file does not exist: {} -> {}", fullPath_, file_);
+            SPDLOG_LOGGER_WARN(azurestorage_logger, "File does not exist: {} -> {}", fullPath_, file_);
             return StatusCode::AS_FILE_NOT_FOUND;
         }
 
@@ -787,18 +739,13 @@ StatusCode AzureStorageFile::fileModificationTime(int64_t* mtime_ns) {
 
         auto nanoseconds = time.to_interval();
 
-        SPDLOG_TRACE("AS: modification time for {} is {}", fullPath_, nanoseconds);
+        SPDLOG_LOGGER_TRACE(azurestorage_logger, "Modification time for {} is {}", fullPath_, nanoseconds);
         *mtime_ns = nanoseconds;
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -844,14 +791,9 @@ StatusCode AzureStorageFile::getDirectoryContents(files_list_t* contents) {
 
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -894,14 +836,9 @@ StatusCode AzureStorageFile::getDirectorySubdirs(files_list_t* subdirs) {
 
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -944,14 +881,9 @@ StatusCode AzureStorageFile::getDirectoryFiles(files_list_t* files) {
 
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -983,7 +915,7 @@ StatusCode AzureStorageFile::readTextFile(std::string* contents) {
 
         as_file1_ = as_last_working_subdir.get_file_reference(_XPLATSTR(file_));
         if (!as_file1_.exists()) {
-            SPDLOG_WARN("AS: file does not exist: {} -> {}", fullPath_, file_);
+            SPDLOG_LOGGER_WARN(azurestorage_logger, "File does not exist: {} -> {}", fullPath_, file_);
             return StatusCode::AS_FILE_NOT_FOUND;
         }
 
@@ -994,14 +926,9 @@ StatusCode AzureStorageFile::readTextFile(std::string* contents) {
 
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -1014,8 +941,8 @@ StatusCode AzureStorageFile::downloadFileFolder(const std::string& local_path) {
             return status;
     }
 
-    SPDLOG_INFO(
-        "AS: Downloading dir {} (recursive) and saving a new local path: {}",
+    SPDLOG_LOGGER_DEBUG(azurestorage_logger,
+        "Downloading dir {} (recursive) and saving a new local path: {}",
         fullPath_, local_path);
     return downloadFileFolderTo(local_path);
 }
@@ -1046,21 +973,16 @@ StatusCode AzureStorageFile::deleteFileFolder() {
 
         as_file1_ = as_last_working_subdir.get_file_reference(_XPLATSTR(file_));
         if (!as_file1_.exists()) {
-            SPDLOG_WARN("AS: file does not exist: {} -> {}", fullPath_, file_);
+            SPDLOG_LOGGER_WARN(azurestorage_logger, "File does not exist: {} -> {}", fullPath_, file_);
             return StatusCode::AS_FILE_NOT_FOUND;
         }
 
         as_file1_.delete_file();
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -1092,21 +1014,16 @@ StatusCode AzureStorageFile::downloadFile(const std::string& local_path) {
 
         as_file1_ = as_last_working_subdir.get_file_reference(_XPLATSTR(file_));
         if (!as_file1_.exists()) {
-            SPDLOG_WARN("AS: file does not exist: {} -> {}", fullPath_, file_);
+            SPDLOG_LOGGER_WARN(azurestorage_logger, "File does not exist: {} -> {}", fullPath_, file_);
             return StatusCode::AS_FILE_NOT_FOUND;
         }
 
         as_file1_.download_to_file(local_path);
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -1120,16 +1037,16 @@ StatusCode AzureStorageFile::downloadFileFolderTo(const std::string& local_path)
                 return status;
         }
 
-        SPDLOG_TRACE("AS: Downloading dir {} and saving to {}", fullPath_, local_path);
+        SPDLOG_LOGGER_TRACE(azurestorage_logger, "Downloading dir {} and saving to {}", fullPath_, local_path);
         bool is_dir;
         auto status = this->isDirectory(&is_dir);
         if (status != StatusCode::OK) {
-            SPDLOG_ERROR("Folder does not exist at {}", fullPath_);
+            SPDLOG_LOGGER_WARN(azurestorage_logger, "Folder does not exist at {}", fullPath_);
             return StatusCode::AS_FILE_NOT_FOUND;
         }
 
         if (!is_dir) {
-            SPDLOG_ERROR("Path is not a directory: {}", fullPath_);
+            SPDLOG_LOGGER_WARN(azurestorage_logger, "Path is not a directory: {}", fullPath_);
             return StatusCode::AS_FILE_NOT_FOUND;
         }
 
@@ -1148,14 +1065,14 @@ StatusCode AzureStorageFile::downloadFileFolderTo(const std::string& local_path)
         for (auto&& d : dirs) {
             std::string remote_dir_path = joinPath({fullUri_, d});
             std::string local_dir_path = joinPath({local_path, d});
-            SPDLOG_TRACE("Processing directory {} from {} -> {}", d, remote_dir_path,
+            SPDLOG_LOGGER_TRACE(azurestorage_logger, "Processing directory {} from {} -> {}", d, remote_dir_path,
                 local_dir_path);
 
             auto factory = std::make_shared<ovms::AzureStorageFactory>();
             auto azureSubdirStorageObj = factory.get()->getNewAzureStorageObject(remote_dir_path, account_);
             auto status = azureSubdirStorageObj->checkPath(remote_dir_path);
             if (status != StatusCode::OK) {
-                SPDLOG_WARN("AS: Check path failed: {} -> {}", remote_dir_path,
+                SPDLOG_LOGGER_WARN(azurestorage_logger, "Check path failed: {} -> {}", remote_dir_path,
                     ovms::Status(status).string());
                 return status;
             }
@@ -1167,7 +1084,7 @@ StatusCode AzureStorageFile::downloadFileFolderTo(const std::string& local_path)
             auto download_dir_status =
                 azureSubdirStorageObj->downloadFileFolderTo(local_dir_path);
             if (download_dir_status != StatusCode::OK) {
-                SPDLOG_ERROR("Unable to download directory from {} to {}",
+                SPDLOG_LOGGER_WARN(azurestorage_logger, "Unable to download directory from {} to {}",
                     remote_dir_path, local_dir_path);
                 return download_dir_status;
             }
@@ -1176,14 +1093,14 @@ StatusCode AzureStorageFile::downloadFileFolderTo(const std::string& local_path)
         for (auto&& f : files) {
             std::string remote_file_path = joinPath({fullUri_, f});
             std::string local_file_path = joinPath({local_path, f});
-            SPDLOG_TRACE("Processing file {} from {} -> {}", f, remote_file_path,
+            SPDLOG_LOGGER_TRACE(azurestorage_logger, "Processing file {} from {} -> {}", f, remote_file_path,
                 local_file_path);
 
             auto factory = std::make_shared<ovms::AzureStorageFactory>();
             auto azureFileStorageObj = factory.get()->getNewAzureStorageObject(remote_file_path, account_);
             auto status = azureFileStorageObj->checkPath(remote_file_path);
             if (status != StatusCode::OK) {
-                SPDLOG_WARN("AS: Check path failed: {} -> {}", remote_file_path,
+                SPDLOG_LOGGER_WARN(azurestorage_logger, "Check path failed: {} -> {}", remote_file_path,
                     ovms::Status(status).string());
                 return status;
             }
@@ -1191,21 +1108,16 @@ StatusCode AzureStorageFile::downloadFileFolderTo(const std::string& local_path)
             auto download_status =
                 azureFileStorageObj->downloadFile(local_file_path);
             if (download_status != StatusCode::OK) {
-                SPDLOG_ERROR("Unable to save file from {} to {}", remote_file_path,
+                SPDLOG_LOGGER_WARN(azurestorage_logger, "Unable to save file from {} to {}", remote_file_path,
                     local_file_path);
                 return download_status;
             }
         }
         return StatusCode::OK;
     } catch (const as::storage_exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
-        as::request_result result = e.result();
-        as::storage_extended_error extended_error = result.extended_error();
-        if (!extended_error.message().empty()) {
-            SPDLOG_ERROR("Unable to access path: {}", extended_error.message());
-        }
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Unable to access path: {}", extractAzureStorageExceptionMessage(e));
     } catch (const std::exception& e) {
-        SPDLOG_ERROR("Unable to access path: {}", e.what());
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, UNAVAILABLE_PATH_ERROR, e.what());
     }
 
     return StatusCode::AS_FILE_NOT_FOUND;
@@ -1234,7 +1146,7 @@ StatusCode AzureStorageFile::parseFilePath(const std::string& path) {
     // azure://share/directory
     // azure://share/
     if (path.back() == '/') {
-        SPDLOG_ERROR("Path can not end with '/'", path);
+        SPDLOG_LOGGER_WARN(azurestorage_logger, "Path can not end with '/'", path);
         return StatusCode::AS_INVALID_PATH;
     }
 
@@ -1245,10 +1157,10 @@ StatusCode AzureStorageFile::parseFilePath(const std::string& path) {
         share_start = path.find(AzureFileSystem::AZURE_URL_FILE_PREFIX) + AzureFileSystem::AZURE_URL_FILE_PREFIX.size();
     } else if (path.find(AzureFileSystem::AZURE_URL_BLOB_PREFIX) != std::string::npos) {
         // Blob path
-        SPDLOG_ERROR("Wrong object type. azfs:// prefix in path required, found az://:", path);
+        SPDLOG_LOGGER_ERROR(azurestorage_logger, "Wrong object type. azfs:// prefix in path required, found az://:", path);
         return StatusCode::AS_INVALID_PATH;
     } else {
-        SPDLOG_ERROR("Missing azfs:// prefix in path:", path);
+        SPDLOG_LOGGER_WARN(azurestorage_logger, "Missing azfs:// prefix in path:", path);
         return StatusCode::AS_INVALID_PATH;
     }
 

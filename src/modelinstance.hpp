@@ -31,6 +31,8 @@
 #include "tensorflow_serving/apis/prediction_service.grpc.pb.h"
 #pragma GCC diagnostic pop
 
+#include "customloaderconfig.hpp"
+#include "customloaderinterface.hpp"
 #include "modelchangesubscription.hpp"
 #include "modelconfig.hpp"
 #include "modelinstanceunloadguard.hpp"
@@ -194,6 +196,13 @@ protected:
          */
     ModelConfig config;
 
+    /**
+         * @brief Loads OV CNNNetwork Using the Custom Loader
+         *
+         * @return Status
+         */
+    Status loadOVCNNNetworkUsingCustomLoader();
+
 private:
     /**
          * @brief Holds the information about inputs and it's parameters
@@ -273,13 +282,6 @@ private:
     uint32_t getNumOfParallelInferRequestsUnbounded(const ModelConfig& config);
 
     /**
-         * @brief Reloads model input/output metadata from current state of CNNNetwork
-         *
-         * @return Status
-         */
-    Status recoverFromReshapeError();
-
-    /**
          * @brief Recover from any state model is put into when reload is requested
          * 
          * @param status returned from reload operation
@@ -297,7 +299,7 @@ public:
     ModelInstance(const std::string& name, model_version_t version) :
         name(name),
         version(version),
-        subscriptionManager(std::string("model: ") + name + std::string("version: ") + std::to_string(version)) {}
+        subscriptionManager(std::string("model: ") + name + std::string(" version: ") + std::to_string(version)) {}
 
     /**
          * @brief Destroy the Model Instance object
@@ -455,9 +457,10 @@ public:
 
     /**
          * @brief Unloads model version
-         *
+         * @param isPermanent defines if the unload operation should be permanent and should change instance state to End after it is completed
+         * otherwise model might be unloaded temporarily so the instance state should be preserved as Loading
          */
-    virtual void unloadModel();
+    virtual void unloadModel(bool isPermanent = true);
 
     /**
          * @brief Wait for model to change to AVAILABLE state
@@ -473,6 +476,8 @@ public:
     void subscribe(PipelineDefinition& pd);
 
     void unsubscribe(PipelineDefinition& pd);
+
+    const ModelChangeSubscription& getSubscribtionManager() const { return subscriptionManager; }
 
     const Status validate(const tensorflow::serving::PredictRequest* request);
 };

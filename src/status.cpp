@@ -36,14 +36,17 @@ const std::map<const StatusCode, const std::string> Status::statusMessageMap = {
     {StatusCode::CANNOT_LOAD_NETWORK_INTO_TARGET_DEVICE, "Cannot load network into target device"},
     {StatusCode::MODEL_MISSING, "Model with requested name and/or version is not found"},
     {StatusCode::MODEL_NAME_MISSING, "Model with requested name is not found"},
-    {StatusCode::PIPELINE_DEFINITION_NAME_MISSING, "Model with requested name is not found"},
     {StatusCode::MODEL_VERSION_MISSING, "Model with requested version is not found"},
     {StatusCode::MODEL_VERSION_NOT_LOADED_ANYMORE, "Model with requested version is retired"},
     {StatusCode::MODEL_VERSION_NOT_LOADED_YET, "Model with requested version is not loaded yet"},
+    {StatusCode::PIPELINE_DEFINITION_NOT_LOADED_ANYMORE, "Pipeline is retired"},
+    {StatusCode::PIPELINE_DEFINITION_NOT_LOADED_YET, "Pipeline is not loaded yet"},
     {StatusCode::MODEL_SPEC_MISSING, "model_spec missing in request"},
     {StatusCode::INVALID_SIGNATURE_DEF, "Invalid signature name"},
     {StatusCode::CONFIG_SHAPE_IS_NOT_IN_NETWORK, "Shape from config not found in network"},
     {StatusCode::INVALID_NIREQ, "Nireq parameter too high"},
+    {StatusCode::REQUESTED_DYNAMIC_PARAMETERS_ON_SUBSCRIBED_MODEL, "Requested dynamic parameters but model is subscribed to pipeline"},
+    {StatusCode::PIPELINE_STREAM_ID_NOT_READY_YET, "Node is not ready for execution"},
 
     // Predict request validation
     {StatusCode::INVALID_NO_OF_INPUTS, "Invalid number of inputs"},
@@ -90,6 +93,26 @@ const std::map<const StatusCode, const std::string> Status::statusMessageMap = {
     {StatusCode::REST_UNSUPPORTED_PRECISION, "Could not parse input content. Unsupported data precision detected"},
     {StatusCode::REST_SERIALIZE_TENSOR_CONTENT_INVALID_SIZE, "Tensor serialization error"},
 
+    // Pipeline validation errors
+    {StatusCode::PIPELINE_DEFINITION_ALREADY_EXIST, "Pipeline definition with the same name already exists"},
+    {StatusCode::PIPELINE_NODE_WRONG_KIND_CONFIGURATION, "Unsupported node type"},
+    {StatusCode::PIPELINE_MULTIPLE_ENTRY_NODES, "Pipeline definition has multiple request nodes"},
+    {StatusCode::PIPELINE_MULTIPLE_EXIT_NODES, "Pipeline definition has multiple response nodes"},
+    {StatusCode::PIPELINE_MISSING_ENTRY_OR_EXIT, "Pipeline definition is missing request or response node"},
+    {StatusCode::PIPELINE_DEFINITION_NAME_MISSING, "Model with requested name is not found"},
+    {StatusCode::PIPELINE_NODE_NAME_DUPLICATE, "Pipeline definition has multiple nodes with the same name"},
+    {StatusCode::PIPELINE_CYCLE_FOUND, "Pipeline definition contains a cycle"},
+    {StatusCode::PIPELINE_CONTAINS_UNCONNECTED_NODES, "Pipeline definition has unconnected nodes"},
+    {StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_NODE, "Pipeline definition has reference to missing node"},
+    {StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_MODEL, "Pipeline definition has reference to missing model"},
+    {StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_DATA_SOURCE, "Pipeline definition has reference to missing data source"},
+    {StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_MODEL_OUTPUT, "Pipeline definition has reference to missing model output"},
+    {StatusCode::PIPELINE_CONNECTION_TO_MISSING_MODEL_INPUT, "Pipeline definition has connection to non existing model input"},
+    {StatusCode::PIPELINE_NOT_ALL_INPUTS_CONNECTED, "Pipeline definition does not have connections for all inputs of underlying models"},
+    {StatusCode::PIPELINE_MODEL_INPUT_CONNECTED_TO_MULTIPLE_DATA_SOURCES, "Pipeline definition has multiple connections to the same input of underlying model"},
+    {StatusCode::PIPELINE_EXIT_USED_AS_NODE_DEPENDENCY, "Pipeline definition has response node used as dependency node"},
+    {StatusCode::PIPELINE_NAME_OCCUPIED, "Pipeline has the same name as model"},
+
     // Storage errors
     // S3
     {StatusCode::S3_BUCKET_NOT_FOUND, "S3 Bucket not found"},
@@ -124,6 +147,14 @@ const std::map<const StatusCode, const std::string> Status::statusMessageMap = {
     {StatusCode::AS_FILE_INVALID, "AS File path is invalid"},
     {StatusCode::AS_FAILED_GET_OBJECT, "AS Failed to get object from path"},
     {StatusCode::AS_INCORRECT_REQUESTED_OBJECT_TYPE, "AS invalid object type in path"},
+
+    // Custom Loader
+    {StatusCode::CUSTOM_LOADER_LIBRARY_INVALID, "Custom Loader library not found or cannot open"},
+    {StatusCode::CUSTOM_LOADER_LIBRARY_LOAD_FAILED, "Cannot load the custom library"},
+    {StatusCode::CUSTOM_LOADER_EXISTS, "The custom loader is already present in loaders list"},
+    {StatusCode::CUSTOM_LOADER_NOT_PRESENT, "The custom loader is not present in loaders list"},
+    {StatusCode::CUSTOM_LOADER_INIT_FAILED, "Custom Loader LoadInit failed"},
+    {StatusCode::CUSTOM_LOADER_ERROR, "Custom Loader Generic / Unknown Error"},
 };
 
 const std::map<const StatusCode, grpc::StatusCode> Status::grpcStatusMap = {
@@ -146,6 +177,8 @@ const std::map<const StatusCode, grpc::StatusCode> Status::grpcStatusMap = {
     {StatusCode::MODEL_VERSION_MISSING, grpc::StatusCode::NOT_FOUND},
     {StatusCode::MODEL_VERSION_NOT_LOADED_ANYMORE, grpc::StatusCode::NOT_FOUND},
     {StatusCode::MODEL_VERSION_NOT_LOADED_YET, grpc::StatusCode::NOT_FOUND},
+    {StatusCode::PIPELINE_DEFINITION_NOT_LOADED_ANYMORE, grpc::StatusCode::NOT_FOUND},
+    {StatusCode::PIPELINE_DEFINITION_NOT_LOADED_YET, grpc::StatusCode::NOT_FOUND},
     {StatusCode::MODEL_SPEC_MISSING, grpc::StatusCode::INVALID_ARGUMENT},
     {StatusCode::INVALID_SIGNATURE_DEF, grpc::StatusCode::INVALID_ARGUMENT},
 
@@ -219,6 +252,8 @@ const std::map<const StatusCode, net_http::HTTPStatusCode> Status::httpStatusMap
     {StatusCode::MODEL_VERSION_MISSING, net_http::HTTPStatusCode::NOT_FOUND},
     {StatusCode::MODEL_VERSION_NOT_LOADED_ANYMORE, net_http::HTTPStatusCode::NOT_FOUND},
     {StatusCode::MODEL_VERSION_NOT_LOADED_YET, net_http::HTTPStatusCode::NOT_FOUND},
+    {StatusCode::PIPELINE_DEFINITION_NOT_LOADED_YET, net_http::HTTPStatusCode::NOT_FOUND},
+    {StatusCode::PIPELINE_DEFINITION_NOT_LOADED_ANYMORE, net_http::HTTPStatusCode::NOT_FOUND},
     {StatusCode::MODEL_SPEC_MISSING, net_http::HTTPStatusCode::BAD_REQUEST},
     {StatusCode::INVALID_SIGNATURE_DEF, net_http::HTTPStatusCode::BAD_REQUEST},
 

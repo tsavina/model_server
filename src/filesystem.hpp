@@ -30,7 +30,6 @@ namespace ovms {
 namespace fs = std::filesystem;
 
 using files_list_t = std::set<std::string>;
-
 class FileSystem {
 public:
     /**
@@ -126,12 +125,11 @@ public:
      * @param local_path 
      * @return StatusCode 
      */
-
     static StatusCode createTempPath(std::string* local_path) {
         std::string file_template = "/tmp/fileXXXXXX";
         char* tmp_folder = mkdtemp(const_cast<char*>(file_template.c_str()));
         if (tmp_folder == nullptr) {
-            spdlog::error("Failed to create local temp folder: {} {}", file_template, strerror(errno));
+            SPDLOG_ERROR("Failed to create local temp folder: {} {}", file_template, strerror(errno));
             return StatusCode::FILESYSTEM_ERROR;
         }
         fs::permissions(tmp_folder,
@@ -141,6 +139,10 @@ public:
         *local_path = std::string(tmp_folder);
 
         return StatusCode::OK;
+    }
+
+    static bool isPathEscaped(const std::string& path) {
+        return std::string::npos != path.find("../") || std::string::npos != path.find("/..");
     }
 
     std::string appendSlash(const std::string& name) {
@@ -182,8 +184,7 @@ public:
         int status =
             mkdir(const_cast<char*>(path.c_str()), S_IRUSR | S_IWUSR | S_IXUSR);
         if (status == -1) {
-            SPDLOG_ERROR("Failed to create local folder: {} {} ", path,
-                strerror(errno));
+            SPDLOG_ERROR("Failed to create local folder: {} {} ", path, strerror(errno));
             return StatusCode::PATH_INVALID;
         }
         return StatusCode::OK;

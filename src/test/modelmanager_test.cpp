@@ -20,6 +20,7 @@
 #include <gtest/gtest.h>
 
 #include "../localfilesystem.hpp"
+#include "../logging.hpp"
 #include "../model.hpp"
 #include "../modelmanager.hpp"
 #include "mockmodelinstancechangingstates.hpp"
@@ -69,8 +70,6 @@ const std::string SECOND_MODEL_NAME = "alpha";
 
 const std::string model_1_path = "/tmp/models/dummy1/1";
 const std::string model_2_path = "/tmp/models/dummy2/2";
-
-const std::chrono::duration SLEEP_TIME_S = std::chrono::seconds(3);
 
 class MockModel : public ovms::Model {
 public:
@@ -259,6 +258,28 @@ TEST(ModelManager, ReadsVersionsFromDisk) {
     EXPECT_THAT(versions, ::testing::UnorderedElementsAre(1, 5, 8, 10));
 }
 
+TEST(ModelManager, PathEscapeError1) {
+    const std::string path = "/tmp/../test_model/";
+
+    ovms::model_versions_t versions;
+    std::shared_ptr<ovms::FileSystem> fs = std::make_shared<ovms::LocalFileSystem>();
+
+    auto status = ovms::ModelManager::getInstance().readAvailableVersions(fs, path, versions);
+
+    EXPECT_EQ(status, ovms::StatusCode::PATH_INVALID);
+}
+
+TEST(ModelManager, PathEscapeError2) {
+    const std::string path = "../tmp/test_model/";
+
+    ovms::model_versions_t versions;
+    std::shared_ptr<ovms::FileSystem> fs = std::make_shared<ovms::LocalFileSystem>();
+
+    auto status = ovms::ModelManager::getInstance().readAvailableVersions(fs, path, versions);
+
+    EXPECT_EQ(status, ovms::StatusCode::PATH_INVALID);
+}
+
 TEST(ModelManager, ReadVersionsInvalidPath) {
     const std::string path = "/tmp/inexisting_path/8bt4kv";
 
@@ -305,16 +326,15 @@ TEST(ModelManager, ConfigReloadingShouldAddNewModel) {
     auto models = manager.getModels().size();
     EXPECT_EQ(models, 1);
     EXPECT_EQ(status, ovms::StatusCode::OK);
-    std::thread t([]() {
-        std::this_thread::sleep_for(SLEEP_TIME_S);
+    std::thread t([&manager]() {
+        waitForOVMSConfigReload(manager);
     });
     t.join();
     createConfigFileWithContent(config_2_models, fileToReload);
-    std::thread s([]() {
-        std::this_thread::sleep_for(SLEEP_TIME_S);
+    std::thread s([&manager]() {
+        waitForOVMSConfigReload(manager);
     });
     s.join();
-    std::this_thread::sleep_for(SLEEP_TIME_S);
     models = manager.getModels().size();
     EXPECT_EQ(models, 2);
     manager.join();
@@ -328,6 +348,39 @@ TEST(ModelManager, ConfigReloadingWithWrongInputName) {
     config.setBasePath("/ovms/src/test/dummy");
     auto status = manager.reloadModelWithVersions(config);
     ASSERT_EQ(status, ovms::StatusCode::CONFIG_SHAPE_IS_NOT_IN_NETWORK);
+}
+
+TEST(ModelManager, ConfigReloadingWithTwoModelsWithTheSameName) {
+    const char* configWithTwoSameNames = R"({
+   "model_config_list": [
+    {
+      "config": {
+        "name": "same_name",
+        "base_path": "/tmp/models/dummy1"
+      }
+    },
+    {
+      "config": {
+        "name": "same_name",
+        "base_path": "/tmp/models/dummy2"
+      }
+    }]})";
+    std::filesystem::create_directories(model_1_path);
+    std::filesystem::create_directories(model_2_path);
+    std::string fileToReload = "/tmp/ovms_config_file2.json";
+    createConfigFileWithContent(configWithTwoSameNames, fileToReload);
+    modelMock = std::make_shared<MockModel>();
+    MockModelManager manager;
+
+    EXPECT_CALL(*modelMock, addVersion(_))
+        .Times(1)
+        .WillRepeatedly(Return(ovms::Status(ovms::StatusCode::OK)));
+    auto status = manager.startFromFile(fileToReload);
+    auto models = manager.getModels().size();
+    EXPECT_EQ(models, 1);
+    EXPECT_EQ(status, ovms::StatusCode::OK);
+    manager.join();
+    modelMock.reset();
 }
 
 class MockModelManagerWithModelInstancesJustChangingStates : public ovms::ModelManager {
@@ -365,7 +418,7 @@ TEST(ModelManager, ConfigReloadingShouldRetireModelInstancesOfModelRemovedFromJs
     auto models = manager.getModels();
     ASSERT_EQ(models.size(), 2);
     ASSERT_EQ(status, ovms::StatusCode::OK);
-    std::this_thread::sleep_for(SLEEP_TIME_S);
+    waitForOVMSConfigReload(manager);
     models = manager.getModels();
     ASSERT_EQ(models.size(), 2);
     for (auto& nameModel : models) {
@@ -375,7 +428,7 @@ TEST(ModelManager, ConfigReloadingShouldRetireModelInstancesOfModelRemovedFromJs
     }
     // we remove SECOND_MODEL from config file and expect to have all versions of it retired
     createConfigFileWithContent(config_1_model, fileToReload);
-    std::this_thread::sleep_for(SLEEP_TIME_S);
+    waitForOVMSConfigReload(manager);
     models = manager.getModels();
     ASSERT_EQ(models.size(), 2);
     for (auto& versionModelInstance : manager.getModels().at(FIRST_MODEL_NAME)->getModelVersions()) {

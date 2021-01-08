@@ -22,11 +22,13 @@
 #include <shared_mutex>
 #include <string>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 #include <rapidjson/document.h>
 #include <spdlog/spdlog.h>
 
+#include "customloaders.hpp"
 #include "filesystem.hpp"
 #include "model.hpp"
 #include "pipeline.hpp"
@@ -60,19 +62,18 @@ private:
      */
     ModelManager(const ModelManager&) = delete;
 
-    /**
-     * @brief Reads models from configuration file
-     * 
-     * @param jsonFilename configuration file
-     * @return Status 
-     */
-    Status loadConfig(const std::string& jsonFilename);
     Status cleanupModelTmpFiles(ModelConfig& config);
     Status reloadModelVersions(std::shared_ptr<ovms::Model>& model, std::shared_ptr<FileSystem>& fs, ModelConfig& config, std::shared_ptr<model_versions_t>& versionsToReload);
     Status addModelVersions(std::shared_ptr<ovms::Model>& model, std::shared_ptr<FileSystem>& fs, ModelConfig& config, std::shared_ptr<model_versions_t>& versionsToStart);
-    Status loadModelsConfig(rapidjson::Document& configJson);
+    Status loadModelsConfig(rapidjson::Document& configJson, std::vector<ModelConfig>& gatedModelConfigs);
+    Status tryReloadGatedModelConfigs(std::vector<ModelConfig>& gatedModelConfigs);
     Status loadPipelinesConfig(rapidjson::Document& configJson);
+    Status loadCustomLoadersConfig(rapidjson::Document& configJson);
 
+    /**
+     * @brief creates customloader from the loader configuration
+     */
+    Status createCustomLoader(CustomLoaderConfig& loaderConfig);
     /**
      * @brief Watcher thread for monitor changes in config
      */
@@ -97,7 +98,7 @@ private:
      * @brief A current configurations of models
      * 
      */
-    std::vector<ModelConfig> servedModelConfigs;
+    std::unordered_map<std::string, ModelConfig> servedModelConfigs;
 
     /**
      * @brief Retires models non existing in config file
@@ -111,6 +112,11 @@ private:
      */
     mutable std::shared_mutex modelsMtx;
 
+    /**
+     * Time interval between each config file check
+     */
+    uint watcherIntervalSec = 1;
+
 public:
     /**
      * @brief Gets the instance of ModelManager
@@ -118,6 +124,13 @@ public:
     static ModelManager& getInstance() {
         static ModelManager instance;
         return instance;
+    }
+
+    /**
+     *  @brief Gets the watcher interval timestep in seconds
+     */
+    uint getWatcherIntervalSec() {
+        return watcherIntervalSec;
     }
 
     /**
@@ -144,6 +157,10 @@ public:
         return models;
     }
 
+    const PipelineFactory& getPipelineFactory() const {
+        return pipelineFactory;
+    }
+
     /**
      * @brief Finds model with specific name
      *
@@ -168,7 +185,7 @@ public:
      *
      * @return pointer to ModelInstance or nullptr if not found 
      */
-    const std::shared_ptr<ModelInstance> findModelInstance(const std::string& name, model_version_t version = 0) {
+    const std::shared_ptr<ModelInstance> findModelInstance(const std::string& name, model_version_t version = 0) const {
         auto model = findModelByName(name);
         if (!model) {
             return nullptr;
@@ -272,5 +289,22 @@ public:
         std::shared_ptr<model_versions_t>& versionsToRetireIn,
         std::shared_ptr<model_versions_t>& versionsToReloadIn,
         std::shared_ptr<model_versions_t>& versionsToStartIn);
+
+    static std::shared_ptr<FileSystem> getFilesystem(const std::string& basePath);
+
+protected:
+    /**
+     * @brief Reads models from configuration file
+     * 
+     * @param jsonFilename configuration file
+     * @return Status 
+     */
+    Status loadConfig(const std::string& jsonFilename);
+
+    /**
+     * @brief Updates OVMS configuration with cached configuration file. Will check for newly added model versions
+     */
+    void updateConfigurationWithoutConfigFile();
 };
+
 }  // namespace ovms

@@ -22,6 +22,7 @@
 #include <utility>
 #include <vector>
 
+#include "filesystem.hpp"
 #include "modelchangesubscription.hpp"
 #include "modelinstance.hpp"
 
@@ -37,9 +38,11 @@ private:
     mutable std::shared_mutex modelVersionsMtx;
 
     /**
-         * @brief Update default version
-         */
-    void updateDefaultVersion();
+      * @brief Update default version
+      *
+      * @param ignoredVersion Version to exclude from being selected as the default version
+      */
+    void updateDefaultVersion(int ignoredVersion = 0);
 
 protected:
     /**
@@ -64,7 +67,7 @@ protected:
          * @return default version
          */
     const model_version_t getDefaultVersion() const {
-        spdlog::debug("Getting default version for model:{}, {}", getName(), defaultVersion);
+        SPDLOG_DEBUG("Getting default version for model: {}, {}", getName(), defaultVersion);
         return defaultVersion;
     }
 
@@ -85,6 +88,12 @@ protected:
     virtual std::shared_ptr<ovms::ModelInstance> modelInstanceFactory(const std::string& modelName, const model_version_t modelVersion);
 
     ModelChangeSubscription subscriptionManager;
+
+    /**
+         * @brief Holds the custom loader interface Name
+         *
+         */
+    std::string customLoaderName;
 
 public:
     /**
@@ -151,7 +160,7 @@ public:
          *
          * @return status
          */
-    Status addVersions(std::shared_ptr<model_versions_t> versions, ovms::ModelConfig& config);
+    Status addVersions(std::shared_ptr<model_versions_t> versions, ovms::ModelConfig& config, std::shared_ptr<FileSystem>& fs);
 
     /**
          * @brief Retires versions of Model
@@ -174,9 +183,35 @@ public:
          *
          * @return status
          */
-    Status reloadVersions(std::shared_ptr<model_versions_t> versions, ovms::ModelConfig& config);
+    Status reloadVersions(std::shared_ptr<model_versions_t> versions, ovms::ModelConfig& config, std::shared_ptr<FileSystem>& fs);
 
     void subscribe(PipelineDefinition& pd);
     void unsubscribe(PipelineDefinition& pd);
+    /**
+         * @brief Set the custom loader name
+         *
+         * @param custom loader name
+         *
+         */
+
+    bool isAnyVersionSubscribed() const;
+
+    void setCustomLoaderName(const std::string name) {
+        customLoaderName = name;
+    }
+
+    /**
+         * @brief Reset the custom loader name
+         *
+         */
+    void resetCustomLoaderName() {
+        customLoaderName.clear();
+    }
+
+    /**
+     * @brief Delete temporary model files
+     *
+     */
+    static Status cleanupModelTmpFiles(const ModelConfig& config);
 };
 }  // namespace ovms

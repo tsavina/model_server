@@ -38,6 +38,8 @@ struct ShapeInfo {
     Mode shapeMode = FIXED;
     shape_t shape;
 
+    operator std::string() const;
+
     bool operator==(const ShapeInfo& rhs) const {
         return this->shapeMode == rhs.shapeMode && this->shape == rhs.shape;
     }
@@ -51,6 +53,7 @@ using shapes_map_t = std::unordered_map<std::string, ShapeInfo>;
 using layouts_map_t = std::unordered_map<std::string, std::string>;
 using mapping_config_t = std::unordered_map<std::string, std::string>;
 using plugin_config_t = std::map<std::string, std::string>;
+using custom_loader_options_config_t = std::map<std::string, std::string>;
 
 const std::string ANONYMOUS_INPUT_NAME = "ANONYMOUS_INPUT_NAME";
 const std::string MAPPING_CONFIG_JSON = "mapping_config.json";
@@ -149,6 +152,16 @@ private:
          * @brief Shape delimeter in string format
          */
     static const char shapeDelimeter = ',';
+
+    /**
+         * @brief custom_loader_options config as map
+         */
+    custom_loader_options_config_t customLoaderOptionsConfigMap;
+
+    /**
+         * @brief custom_loader_options config as string
+         */
+    std::string customLoaderOptionsStr;
 
 public:
     /**
@@ -307,6 +320,10 @@ public:
          */
     Mode getBatchingMode() const {
         return this->batchingMode;
+    }
+
+    bool isDynamicParameterEnabled() const {
+        return this->getBatchingMode() == Mode::AUTO || this->anyShapeSetToAuto();
     }
 
     /**
@@ -479,8 +496,7 @@ public:
          * @return bool
          */
     bool anyShapeSetToAuto() const {
-        for (auto& it : getShapes()) {
-            auto shapeInfo = it.second;
+        for (const auto& [name, shapeInfo] : getShapes()) {
             if (shapeInfo.shapeMode == AUTO)
                 return true;
         }
@@ -527,6 +543,10 @@ public:
 
     bool isShapeAnonymousFixed() const {
         return isShapeAnonymous() && !isShapeAuto(ANONYMOUS_INPUT_NAME);
+    }
+
+    bool isCloudStored() const {
+        return getLocalPath() != getBasePath();
     }
 
     /**
@@ -690,5 +710,41 @@ public:
         * @return Status 
         */
     Status parseNode(const rapidjson::Value& v);
+
+    /**
+        * @brief Returns true if model requires a custom loader to load
+         *
+         * @return bool
+         */
+    const bool isCustomLoaderRequiredToLoadModel() const {
+        return (this->customLoaderOptionsConfigMap.size() > 0);
+    }
+
+    /**
+         * @brief Get the custom loader option config
+         *
+         * @return const custom_loader_options_config_t&
+         */
+    const custom_loader_options_config_t& getCustomLoaderOptionsConfigMap() const {
+        return this->customLoaderOptionsConfigMap;
+    }
+
+    /**
+         * @brief Get the custom loader option config
+         *
+         * @return const std::string
+         */
+    const std::string& getCustomLoaderOptionsConfigStr() const {
+        return this->customLoaderOptionsStr;
+    }
+
+    /**
+         * @brief Parses json node for custom_loader_options config keys and values
+         *
+         * @param json node representing custom_loader_options_config
+         *
+         * @return status
+         */
+    Status parseCustomLoaderOptionsConfig(const rapidjson::Value& node);
 };
 }  // namespace ovms
