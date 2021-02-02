@@ -1,0 +1,266 @@
+Sending build context to Docker daemon  3.112MB
+Step 1/10 : ARG BUILD_IMAGE=openvino/model_server-build:latest
+Step 2/10 : FROM $BUILD_IMAGE
+ ---> b2e35626de5b
+Step 3/10 : RUN http_proxy=${HTTP_PROXY} yum install -y glibc.i686 libgcc.x86_64 libgcc.i686 numactl redhat-lsb-core.i686
+ ---> Using cache
+ ---> 4658d76835a0
+Step 4/10 : WORKDIR /ovms/src
+ ---> Using cache
+ ---> b20b116ba08b
+Step 5/10 : ENV InferenceEngine_DIR=/opt/intel/openvino/inference_engine/share/
+ ---> Using cache
+ ---> 26adb8b0d977
+Step 6/10 : ENV ngraph_DIR=/opt/intel/openvino/deployment_tools/ngraph/cmake/
+ ---> Using cache
+ ---> 3789a0407180
+Step 7/10 : ENV LD_LIBRARY_PATH=LD_LIBRARY_PATH:/opt/intel/openvino/inference_engine/external/tbb/lib
+ ---> Using cache
+ ---> 58945cff156a
+Step 8/10 : ADD CMakeLists.txt /ovms/src
+ ---> acdd5224985d
+Step 9/10 : RUN export BAZEL_BUILD=$(ls /root/.cache/bazel/_bazel_root/ | egrep  '.{32}') &&     grep '\.a\|\.o' /root/.cache/bazel/_bazel_root/$BAZEL_BUILD/execroot/ovms/bazel-out/k8-opt/bin/src/ovms-2.params | grep -Ev '(ovms_lib|libstdc\+\+|main.pic.o)' |     sed "s/^bazel-out\/k8-opt\/bin\/external\//\/root\/\.cache\/bazel\/_bazel_root\/$BAZEL_BUILD\/execroot\/ovms\/bazel-out\/k8-opt\/bin\/external\//g" |     sed "s/^external\//\/root\/\.cache\/bazel\/_bazel_root\/$BAZEL_BUILD\/external\//g" > ovms_libs.in &&     cmake3 .
+ ---> Running in 361f94c998be
+-- The C compiler identification is GNU 8.3.1
+-- The CXX compiler identification is GNU 8.3.1
+-- Check for working C compiler: /opt/rh/devtoolset-8/root/bin/gcc
+-- Check for working C compiler: /opt/rh/devtoolset-8/root/bin/gcc - works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Check for working CXX compiler: /opt/rh/devtoolset-8/root/bin/g++
+-- Check for working CXX compiler: /opt/rh/devtoolset-8/root/bin/g++ - works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found PythonInterp: /usr/bin/python (found version "2.7.5") 
+-- Looking for pthread.h
+-- Looking for pthread.h - found
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Failed
+-- Check if compiler accepts -pthread
+-- Check if compiler accepts -pthread - yes
+-- Found Threads: TRUE  
+-- Found InferenceEngine: /opt/intel/openvino/inference_engine/lib/intel64/libinference_engine.so  
+-- ngraph::ngraph
+[91mCMake Warning (dev) at CMakeLists.txt:82 (target_link_libraries):
+  Policy CMP0023 is not set: Plain and keyword target_link_libraries
+  signatures cannot be mixed.  Run "cmake --help-policy CMP0023" for policy
+  details.  Use the cmake_policy command to set the policy and suppress this
+  warning.
+
+  The keyword signature for target_link_libraries has already been used with
+  the target "ovms_test".  All uses of target_link_libraries with a target
+  should be either all-keyword or all-plain.
+
+  The uses of the keyword signature are here:
+
+   * CMakeLists.txt:81 (target_link_libraries)
+
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+[0m-- Configuring done
+-- Generating done
+-- Build files have been written to: /ovms/src
+Removing intermediate container 361f94c998be
+ ---> e6a7bde97b3a
+Step 10/10 : RUN make -j20
+ ---> Running in 2c958c4c93e3
+Scanning dependencies of target gtest
+[  1%] Building CXX object _deps/googletest-build/googlemock/gtest/CMakeFiles/gtest.dir/src/gtest-all.cc.o
+[  3%] Linking CXX static library libgtest.a
+[  3%] Built target gtest
+Scanning dependencies of target gmock
+Scanning dependencies of target gtest_main
+[  5%] Building CXX object _deps/googletest-build/googlemock/gtest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o
+[  7%] Building CXX object _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/src/gmock-all.cc.o
+[  9%] Linking CXX static library libgtest_main.a
+[  9%] Built target gtest_main
+[ 11%] Linking CXX static library libgmock.a
+[ 11%] Built target gmock
+Scanning dependencies of target gmock_main
+[ 13%] Building CXX object _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/src/gmock_main.cc.o
+Scanning dependencies of target ovms_test
+[ 15%] Building CXX object CMakeFiles/ovms_test.dir/test/azurefilesystem_test.cpp.o
+[ 17%] Building CXX object CMakeFiles/ovms_test.dir/test/custom_loader_test.cpp.o
+[ 19%] Building CXX object CMakeFiles/ovms_test.dir/test/deserialization_tests.cpp.o
+[ 21%] Building CXX object CMakeFiles/ovms_test.dir/test/custom_node_output_allocator_test.cpp.o
+[ 23%] Building CXX object CMakeFiles/ovms_test.dir/test/ensemble_config_change_stress.cpp.o
+[ 25%] Building CXX object CMakeFiles/ovms_test.dir/test/ensemble_mapping_config_tests.cpp.o
+[ 26%] Building CXX object CMakeFiles/ovms_test.dir/test/ensemble_metadata_test.cpp.o
+[ 28%] Building CXX object CMakeFiles/ovms_test.dir/test/ensemble_tests.cpp.o
+[ 30%] Building CXX object CMakeFiles/ovms_test.dir/test/gcsfilesystem_test.cpp.o
+[ 32%] Building CXX object CMakeFiles/ovms_test.dir/test/get_model_metadata_response_test.cpp.o
+[ 34%] Building CXX object CMakeFiles/ovms_test.dir/test/get_model_metadata_signature_test.cpp.o
+[ 36%] Building CXX object CMakeFiles/ovms_test.dir/test/get_model_metadata_validation_test.cpp.o
+[ 38%] Building CXX object CMakeFiles/ovms_test.dir/test/get_pipeline_metadata_response_test.cpp.o
+[ 40%] Building CXX object CMakeFiles/ovms_test.dir/test/localfilesystem_test.cpp.o
+[ 42%] Building CXX object CMakeFiles/ovms_test.dir/test/model_service_test.cpp.o
+[ 44%] Building CXX object CMakeFiles/ovms_test.dir/test/model_test.cpp.o
+[ 46%] Building CXX object CMakeFiles/ovms_test.dir/test/model_version_policy_test.cpp.o
+[ 48%] Building CXX object CMakeFiles/ovms_test.dir/test/modelconfig_test.cpp.o
+[ 50%] Building CXX object CMakeFiles/ovms_test.dir/test/modelinstance_test.cpp.o
+[ 51%] Linking CXX static library libgmock_main.a
+[ 51%] Built target gmock_main
+[ 53%] Building CXX object CMakeFiles/ovms_test.dir/test/modelmanager_test.cpp.o
+[91m/ovms/src/test/model_version_policy_test.cpp:46:25: error: expected constructor, destructor, or type conversion before '(' token
+ INSTANTIATE_TEST_SUITE_P(
+                         ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:50:115: error: expected unqualified-id before ')' token
+         ModelVersionPolicyParameter{ModelVersionPolicy::getDefaultVersionPolicy(), {100}, "ReturnsHighestVersion"}),
+                                                                                                                   ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:56:5: error: 'testing::Values' is not a type
+     ::testing::Values(
+     ^~
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:57:36: error: expected ')' before '{' token
+         ModelVersionPolicyParameter{std::make_shared<LatestModelVersionPolicy>(), {100}, "DefaultReturnsHighest"},
+                                    ^
+                                    )
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:56:22: note: to match this '('
+     ::testing::Values(
+                      ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:57:36: error: expected ')' before '{' token
+         ModelVersionPolicyParameter{std::make_shared<LatestModelVersionPolicy>(), {100}, "DefaultReturnsHighest"},
+                                    ^
+                                    )
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:53:25: note: to match this '('
+ INSTANTIATE_TEST_SUITE_P(
+                         ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:57:36: error: ISO C++ forbids declaration of 'INSTANTIATE_TEST_SUITE_P' with no type [-fpermissive]
+         ModelVersionPolicyParameter{std::make_shared<LatestModelVersionPolicy>(), {100}, "DefaultReturnsHighest"},
+                                    ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp: In function 'int INSTANTIATE_TEST_SUITE_P(...)':
+/ovms/src/test/model_version_policy_test.cpp:57:83: error: expected primary-expression before '{' token
+         ModelVersionPolicyParameter{std::make_shared<LatestModelVersionPolicy>(), {100}, "DefaultReturnsHighest"},
+                                                                                   ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:57:88: error: expected primary-expression before ',' token
+         ModelVersionPolicyParameter{std::make_shared<LatestModelVersionPolicy>(), {100}, "DefaultReturnsHighest"},
+                                                                                        ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:57:113: warning: no return statement in function returning non-void [-Wreturn-type]
+         ModelVersionPolicyParameter{std::make_shared<LatestModelVersionPolicy>(), {100}, "DefaultReturnsHighest"},
+                                                                                                                 ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp: At global scope:
+/ovms/src/test/model_version_policy_test.cpp:57:114: error: mixing declarations and function-definitions is forbidden
+         ModelVersionPolicyParameter{std::make_shared<LatestModelVersionPolicy>(), {100}, "DefaultReturnsHighest"},
+                                                                                                                  ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:58:36: error: expected constructor, destructor, or type conversion before '{' token
+         ModelVersionPolicyParameter{std::make_shared<LatestModelVersionPolicy>(1), {100}, "1_HighestVersion"},
+                                    ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:58:110: error: expected unqualified-id before ',' token
+         ModelVersionPolicyParameter{std::make_shared<LatestModelVersionPolicy>(1), {100}, "1_HighestVersion"},
+                                                                                                              ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:59:36: error: expected constructor, destructor, or type conversion before '{' token
+         ModelVersionPolicyParameter{std::make_shared<LatestModelVersionPolicy>(2), {100, 25}, "2_HighestVersions"},
+                                    ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:59:115: error: expected unqualified-id before ',' token
+         ModelVersionPolicyParameter{std::make_shared<LatestModelVersionPolicy>(2), {100, 25}, "2_HighestVersions"},
+                                                                                                                   ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:60:36: error: expected constructor, destructor, or type conversion before '{' token
+         ModelVersionPolicyParameter{std::make_shared<LatestModelVersionPolicy>(6), {100, 25, 18, 5, 4, 3}, "6_HighestVersions"},
+                                    ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:60:128: error: expected unqualified-id before ',' token
+         ModelVersionPolicyParameter{std::make_shared<LatestModelVersionPolicy>(6), {100, 25, 18, 5, 4, 3}, "6_HighestVersions"},
+                                                                                                                                ^
+/ovms/src/test/model_version_policy_test.cpp:61:36: error: expected constructor, destructor, or type conversion before '{' token
+         ModelVersionPolicyParameter{std::make_shared<LatestModelVersionPolicy>(10), {100, 25, 18, 5, 4, 3}, "10_HighestVersions"}),
+                                    ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:61:130: error: expected unqualified-id before ')' token
+         ModelVersionPolicyParameter{std::make_shared<LatestModelVersionPolicy>(10), {100, 25, 18, 5, 4, 3}, "10_HighestVersions"}),
+                                                                                                                                  ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:67:5: error: 'testing::Values' is not a type
+     ::testing::Values(
+     ^~
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:68:36: error: expected ')' before '{' token
+         ModelVersionPolicyParameter{std::make_shared<AllModelVersionPolicy>(), {3, 4, 5, 18, 25, 100}, "All"}),
+                                    ^
+                                    )
+/ovms/src/test/model_version_policy_test.cpp:67:22: note: to match this '('
+     ::testing::Values(
+                      ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:68:36: error: expected ')' before '{' token
+         ModelVersionPolicyParameter{std::make_shared<AllModelVersionPolicy>(), {3, 4, 5, 18, 25, 100}, "All"}),
+                                    ^
+                                    )
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:64:25: note: to match this '('
+ INSTANTIATE_TEST_SUITE_P(
+                         ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:68:36: error: ISO C++ forbids declaration of 'INSTANTIATE_TEST_SUITE_P' with no type [-fpermissive]
+         ModelVersionPolicyParameter{std::make_shared<AllModelVersionPolicy>(), {3, 4, 5, 18, 25, 100}, "All"}),
+                                    ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:64:1: error: redefinition of 'int INSTANTIATE_TEST_SUITE_P(...)'
+ INSTANTIATE_TEST_SUITE_P(
+ ^~~~~~~~~~~~~~~~~~~~~~~~
+/ovms/src/test/model_version_policy_test.cpp:53:1: note: 'int INSTANTIATE_TEST_SUITE_P(...)' previously defined here
+ INSTANTIATE_TEST_SUITE_P(
+ ^~~~~~~~~~~~~~~~~~~~~~~~
+[0m[91m/ovms/src/test/model_version_policy_test.cpp: In function 'int INSTANTIATE_TEST_SUITE_P(...)':
+/ovms/src/test/model_version_policy_test.cpp:68:80: error: expected primary-expression before '{' token
+         ModelVersionPolicyParameter{std::make_shared<AllModelVersionPolicy>(), {3, 4, 5, 18, 25, 100}, "All"}),
+                                                                                ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:68:102: error: expected primary-expression before ',' token
+         ModelVersionPolicyParameter{std::make_shared<AllModelVersionPolicy>(), {3, 4, 5, 18, 25, 100}, "All"}),
+                                                                                                      ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:68:109: warning: no return statement in function returning non-void [-Wreturn-type]
+         ModelVersionPolicyParameter{std::make_shared<AllModelVersionPolicy>(), {3, 4, 5, 18, 25, 100}, "All"}),
+                                                                                                             ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp: At global scope:
+/ovms/src/test/model_version_policy_test.cpp:68:110: error: expected unqualified-id before ')' token
+         ModelVersionPolicyParameter{std::make_shared<AllModelVersionPolicy>(), {3, 4, 5, 18, 25, 100}, "All"}),
+                                                                                                              ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:80:5: error: 'testing::Values' is not a type
+     ::testing::Values(
+     ^~
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:81:36: error: expected ')' before '{' token
+         ModelVersionPolicyParameter{std::make_shared<SpecificModelVersionPolicy>(specificRequestedVersions[0]), {4, 25}, "Existing"},
+                                    ^
+                                    )
+/ovms/src/test/model_version_policy_test.cpp:80:22: note: to match this '('
+     ::testing::Values(
+                      ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:81:36: error: expected ')' before '{' token
+         ModelVersionPolicyParameter{std::make_shared<SpecificModelVersionPolicy>(specificRequestedVersions[0]), {4, 25}, "Existing"},
+                                    ^
+                                    )
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:77:25: note: to match this '('
+ INSTANTIATE_TEST_SUITE_P(
+                         ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:81:36: error: ISO C++ forbids declaration of 'INSTANTIATE_TEST_SUITE_P' with no type [-fpermissive]
+         ModelVersionPolicyParameter{std::make_shared<SpecificModelVersionPolicy>(specificRequestedVersions[0]), {4, 25}, "Existing"},
+                                    ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:77:1: error: redefinition of 'int INSTANTIATE_TEST_SUITE_P(...)'
+ INSTANTIATE_TEST_SUITE_P(
+ ^~~~~~~~~~~~~~~~~~~~~~~~
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:53:1: note: 'int INSTANTIATE_TEST_SUITE_P(...)' previously defined here
+ INSTANTIATE_TEST_SUITE_P(
+ ^~~~~~~~~~~~~~~~~~~~~~~~
+[0m[91m/ovms/src/test/model_version_policy_test.cpp: In function 'int INSTANTIATE_TEST_SUITE_P(...)':
+/ovms/src/test/model_version_policy_test.cpp:81:113: error: expected primary-expression before '{' token
+         ModelVersionPolicyParameter{std::make_shared<SpecificModelVersionPolicy>(specificRequestedVersions[0]), {4, 25}, "Existing"},
+                                                                                                                 ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:81:120: error: expected primary-expression before ',' token
+         ModelVersionPolicyParameter{std::make_shared<SpecificModelVersionPolicy>(specificRequestedVersions[0]), {4, 25}, "Existing"},
+                                                                                                                        ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:81:132: warning: no return statement in function returning non-void [-Wreturn-type]
+         ModelVersionPolicyParameter{std::make_shared<SpecificModelVersionPolicy>(specificRequestedVersions[0]), {4, 25}, "Existing"},
+                                                                                                                                    ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp: At global scope:
+/ovms/src/test/model_version_policy_test.cpp:81:133: error: mixing declarations and function-definitions is forbidden
+         ModelVersionPolicyParameter{std::make_shared<SpecificModelVersionPolicy>(specificRequestedVersions[0]), {4, 25}, "Existing"},
+                                                                                                                                     ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:82:36: error: expected constructor, destructor, or type conversion before '{' token
+         ModelVersionPolicyParameter{std::make_shared<SpecificModelVersionPolicy>(specificRequestedVersions[1]), {}, "NonExisting"},
+                                    ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:82:131: error: expected unqualified-id before ',' token
+         ModelVersionPolicyParameter{std::make_shared<SpecificModelVersionPolicy>(specificRequestedVersions[1]), {}, "NonExisting"},
+                                                                                                                                   ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:83:36: error: expected constructor, destructor, or type conversion before '{' token
+         ModelVersionPolicyParameter{std::make_shared<SpecificModelVersionPolicy>(specificRequestedVersions[2]), {4, 5}, "ExistingAndNonExisting"}),
+                                    ^
+[0m[91m/ovms/src/test/model_version_policy_test.cpp:83:146: error: expected unqualified-id before ')' token
+         ModelVersionPolicyParameter{std::make_shared<SpecificModelVersionPolicy>(specificRequestedVersions[2]), {4, 5}, "ExistingAndNonExisting"}),
+                                                                                                                                                  ^
+[0m[91mmake[2]: *** [CMakeFiles/ovms_test.dir/test/model_version_policy_test.cpp.o] Error 1
+make[2]: *** Waiting for unfinished jobs....
+[0m
