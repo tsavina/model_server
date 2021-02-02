@@ -63,3 +63,7 @@ target_link_libraries(${PROJECT_NAME} ${OVMS_LIBS})
 target_link_libraries(${PROJECT_NAME} stdc++fs ssl crypto uuid xml2 dl)
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pthread")
+
+enable_testing()
+add_test(NAME    registerer_test 
+         COMMAND registerer_test)
