@@ -25,10 +25,16 @@ file(GLOB ovms_test_SRC
 
 add_executable(ovms_test ${ovms_test_SRC})
 
+add_library(libsampleloader SHARED example/SampleCustomLoader/sampleCustLoader.cpp customloaderinterface.hpp)
+
+add_library(lib_node_mock SHARED test/custom_nodes/node_mock.cpp custom_node_interface.hpp)
+
+add_library(lib_node_missing_implementation SHARED test/custom_nodes/node_missing_implementation.cpp custom_node_interface.hpp)
+
 ################################
 # GTest
 ################################
-set(GTEST_VERSION 1.8.1 CACHE STRING "Google test version")
+set(GTEST_VERSION 1.10.0 CACHE STRING "Google test version")
 FetchContent_Declare(googletest
 GIT_REPOSITORY https://github.com/google/googletest.git
 GIT_TAG release-${GTEST_VERSION})
@@ -65,8 +71,6 @@ include_directories(/awssdk/aws-cpp-sdk-s3/include)
 find_package(InferenceEngine REQUIRED)
 find_package(ngraph REQUIRED)
 
-
-
 target_include_directories(
     ${PROJECT_NAME}
     PRIVATE
@@ -78,9 +82,11 @@ target_include_directories(
 message(STATUS ${NGRAPH_LIBRARIES})
 
 file(STRINGS ovms_libs.in OVMS_LIBS)
+
 target_link_libraries(${PROJECT_NAME} PRIVATE ${InferenceEngine_LIBRARIES} ${OpenCV_LIBS} ${NGRAPH_LIBRARIES} )
 target_link_libraries(${PROJECT_NAME} azurestorage cpprest)
 target_link_libraries(${PROJECT_NAME} ${OVMS_LIBS})
-target_link_libraries(${PROJECT_NAME} stdc++fs ssl crypto uuid xml2 dl gtest gtest_main)
+target_link_libraries(${PROJECT_NAME} stdc++fs ssl crypto uuid xml2 dl)
+target_link_libraries(${PROJECT_NAME} libsampleloader lib_node_mock lib_node_missing_implementation gtest gtest_main gmock)
 
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pthread")

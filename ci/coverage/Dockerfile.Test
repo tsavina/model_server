@@ -23,9 +23,13 @@ ENV InferenceEngine_DIR=/opt/intel/openvino/inference_engine/share/
 ENV ngraph_DIR=/opt/intel/openvino/deployment_tools/ngraph/cmake/
 ENV LD_LIBRARY_PATH=LD_LIBRARY_PATH:/opt/intel/openvino/inference_engine/external/tbb/lib
 ADD CMakeLists.txt /ovms/src
+RUN mkdir -p /ovms/src/ovms
+ADD ovms/CMakeLists.txt /ovms/src/ovms
 RUN export BAZEL_BUILD=$(ls /root/.cache/bazel/_bazel_root/ | egrep  '.{32}') && \
-    grep '\.a\|\.o' /root/.cache/bazel/_bazel_root/$BAZEL_BUILD/execroot/ovms/bazel-out/k8-opt/bin/src/ovms-2.params | grep -Ev '(ovms_lib|libstdc\+\+|main.pic.o)' | \
+    grep '\.a\|\.o' /root/.cache/bazel/_bazel_root/$BAZEL_BUILD/execroot/ovms/bazel-out/k8-opt/bin/src/ovms-2.params | grep -Ev '(ovms_test|libstdc\+\+|main.pic.o)' | \
     sed "s/^bazel-out\/k8-opt\/bin\/external\//\/root\/\.cache\/bazel\/_bazel_root\/$BAZEL_BUILD\/execroot\/ovms\/bazel-out\/k8-opt\/bin\/external\//g" | \
+    sed "s/^bazel-out\/k8-opt\/bin\/src\//\/root\/\.cache\/bazel\/_bazel_root\/$BAZEL_BUILD\/execroot\/ovms\/bazel-out\/k8-opt\/bin\/src\//g" | \
+    sed "s/^external\/boost\//\/root\/\.cache\/bazel\/_bazel_root\/$BAZEL_BUILD\/external\/boost\//g" | \
     sed "s/^external\//\/root\/\.cache\/bazel\/_bazel_root\/$BAZEL_BUILD\/external\//g" > ovms_libs.in && \
     cmake3 .
-RUN make -j20
+RUN make -j4
