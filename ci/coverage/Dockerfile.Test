@@ -17,19 +17,19 @@
 ARG BUILD_IMAGE=openvino/model_server-build:latest
 FROM $BUILD_IMAGE
 
-RUN http_proxy=${HTTP_PROXY} yum install -y glibc.i686 libgcc.x86_64 libgcc.i686 numactl redhat-lsb-core.i686 lcov gcov genhtml
+RUN http_proxy=${HTTP_PROXY} yum install -y lcov gcov genhtml
 WORKDIR /ovms/src
-ENV InferenceEngine_DIR=/opt/intel/openvino/inference_engine/share/
+ENV InferenceEngine_DIR=/opt/intel/openvino/deployment_tools/inference_engine/share/
 ENV ngraph_DIR=/opt/intel/openvino/deployment_tools/ngraph/cmake/
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/intel/openvino/inference_engine/external/tbb/lib:/usr/local/lib:/usr/local/lib64
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/intel/openvino/deployment_tools/inference_engine/external/tbb/lib:/usr/local/lib:/usr/local/lib64:/opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/
 ADD CMakeLists.txt /ovms/src
 RUN export BAZEL_BUILD=$(ls /root/.cache/bazel/_bazel_root/ | egrep  '.{32}') && \
-    grep '\.a\|\.o' /root/.cache/bazel/_bazel_root/$BAZEL_BUILD/execroot/ovms/bazel-out/k8-opt/bin/src/ovms-2.params | grep -Ev '(ovms_test|libstdc\+\+|main.pic.o)' | \
-    sed "s/^bazel-out\/k8-opt\/bin\/external\//\/root\/\.cache\/bazel\/_bazel_root\/$BAZEL_BUILD\/execroot\/ovms\/bazel-out\/k8-opt\/bin\/external\//g" | \
-    sed "s/^bazel-out\/k8-opt\/bin\/src\//\/root\/\.cache\/bazel\/_bazel_root\/$BAZEL_BUILD\/execroot\/ovms\/bazel-out\/k8-opt\/bin\/src\//g" | \
+    grep '\.a\|\.o' /root/.cache/bazel/_bazel_root/$BAZEL_BUILD/execroot/ovms/bazel-out/k8-dbg/bin/src/ovms-2.params | grep -Ev '(ovms_test|libstdc\+\+|main.pic.o)' | \
+    sed "s/^bazel-out\/k8-dbg\/bin\/external\//\/root\/\.cache\/bazel\/_bazel_root\/$BAZEL_BUILD\/execroot\/ovms\/bazel-out\/k8-dbg\/bin\/external\//g" | \
+    sed "s/^bazel-out\/k8-dbg\/bin\/src\//\/root\/\.cache\/bazel\/_bazel_root\/$BAZEL_BUILD\/execroot\/ovms\/bazel-out\/k8-dbg\/bin\/src\//g" | \
     sed "s/^external\/boost\//\/root\/\.cache\/bazel\/_bazel_root\/$BAZEL_BUILD\/external\/boost\//g" | \
     sed "s/^external\//\/root\/\.cache\/bazel\/_bazel_root\/$BAZEL_BUILD\/external\//g" > ovms_libs.in && \
-    cmake3 .
+    cmake3 -DCMAKE_BUILD_TYPE=Debug .
 RUN make -j4
 
 #RUN make test
