@@ -314,6 +314,7 @@ cc_test(
         "test/serialization_tests.cpp",
         "test/stateful_config_test.cpp",
         "test/stateful_modelinstance_test.cpp",
+        "test/status_test.cpp",
         "test/stringutils_test.cpp",
         "test/test_utils.cpp",
         "test/test_utils.hpp",
