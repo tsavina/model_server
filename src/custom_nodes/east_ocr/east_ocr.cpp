@@ -39,16 +39,34 @@ static constexpr const char* TEXT_IMAGES_TENSOR_NAME = "text_images";
         return 1;                                    \
     }
 
-auto reorder_to_chw_float(cv::Mat* mat) {
-    std::vector<float> data(mat->channels() * mat->rows * mat->cols);
-    for(int y = 0; y < mat->rows; ++y) {
-        for(int x = 0; x < mat->cols; ++x) {
-            for(int c = 0; c < mat->channels(); ++c) {
-                data[c * (mat->rows * mat->cols) + y * mat->cols + x] = mat->at<cv::Vec3f>(y, x)[c];
+template<typename T>
+std::vector<T> reorder_to_nhwc(std::vector<T> nchwVector, int rows, int cols, int channels) {
+    std::vector<T> nhwcVector(rows * cols * channels);
+    for(int y = 0; y < rows; ++y) {
+        for(int x = 0; x < cols; ++x) {
+            for(int c = 0; c < channels; ++c) {
+                nhwcVector[y * channels * cols + x * channels + c] = nchwVector[c * (rows * cols) + y * cols + x];
             }
         }
     }
-    return data;
+    return nhwcVector;
+}
+
+template<typename T>
+std::vector<T> reorder_to_nchw(uchar* nhwcVector, int rows, int cols, int channels) {
+    std::vector<T> nchwVector(rows * cols * channels);
+    for(int y = 0; y < rows; ++y) {
+        for(int x = 0; x < cols; ++x) {
+            for(int c = 0; c < channels; ++c) {
+                nchwVector[c * (rows * cols) + y * cols + x] = reinterpret_cast<T*>(nhwcVector)[y * channels * cols + x * channels + c];
+            }
+        }
+    }
+    return nchwVector;
+}
+
+auto reorder_to_chw_float(cv::Mat* mat) {
+    return reorder_to_nchw<float>(mat->data, mat->rows, mat->cols, mat->channels());
 }
 
 auto nchw_to_mat_float(CustomNodeTensor input) {
@@ -58,29 +76,14 @@ auto nchw_to_mat_float(CustomNodeTensor input) {
     int channels = input.dims[1];
     int rows = input.dims[2];
     int cols = input.dims[3];
-
-    for(uint64_t c = 0; c < channels; ++c) {
-        for(uint64_t y = 0; y < rows; ++y) {
-            for(uint64_t x = 0; x < cols; ++x) {
-                (*data)[y * channels * cols + x * channels + c] = nchwVector[c * (rows * cols) + y * cols + x];
-            }
-        }
-    }
+    *data = reorder_to_nhwc<float>(nchwVector, rows, cols, channels);
 
     cv::Mat image(rows, cols , CV_32FC3, (*data).data());
     return image;
 }
 
 auto reorder_to_chw(cv::Mat* mat) {
-    std::vector<uint8_t> data(mat->channels() * mat->rows * mat->cols);
-    for(int y = 0; y < mat->rows; ++y) {
-        for(int x = 0; x < mat->cols; ++x) {
-            for(int c = 0; c < mat->channels(); ++c) {
-                data[c * (mat->rows * mat->cols) + y * mat->cols + x] = mat->at<cv::Vec3b>(y, x)[c];
-            }
-        }
-    }
-    return data;
+    return reorder_to_nchw<uint8_t>(mat->data, mat->rows, mat->cols, mat->channels());
 }
 
 auto nchw_to_mat(CustomNodeTensor input) {
@@ -90,14 +93,7 @@ auto nchw_to_mat(CustomNodeTensor input) {
     int channels = input.dims[1];
     int rows = input.dims[2];
     int cols = input.dims[3];
-
-    for(uint64_t c = 0; c < channels; ++c) {
-        for(uint64_t y = 0; y < rows; ++y) {
-            for(uint64_t x = 0; x < cols; ++x) {
-                (*data)[y * channels * cols + x * channels + c] = nchwVector[c * (rows * cols) + y * cols + x];
-            }
-        }
-    }
+    *data = reorder_to_nhwc<uint8_t>(nchwVector, rows, cols, channels);
 
     cv::Mat image(rows, cols , CV_8UC3, (*data).data());
     return image;
