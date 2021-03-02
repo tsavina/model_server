@@ -39,6 +39,70 @@ static constexpr const char* TEXT_IMAGES_TENSOR_NAME = "text_images";
         return 1;                                    \
     }
 
+auto reorder_to_chw_float(cv::Mat* mat) {
+    std::vector<float> data(mat->channels() * mat->rows * mat->cols);
+    for(int y = 0; y < mat->rows; ++y) {
+        for(int x = 0; x < mat->cols; ++x) {
+            for(int c = 0; c < mat->channels(); ++c) {
+                data[c * (mat->rows * mat->cols) + y * mat->cols + x] = mat->at<cv::Vec3f>(y, x)[c];
+            }
+        }
+    }
+    return data;
+}
+
+auto nchw_to_mat_float(CustomNodeTensor input) {
+    std::vector<float> nchwVector(reinterpret_cast<float*>(input.data), reinterpret_cast<float*>(input.data + input.dataLength));
+    std::vector<float> *data = new std::vector<float>(nchwVector.size());
+
+    int channels = input.dims[1];
+    int rows = input.dims[2];
+    int cols = input.dims[3];
+
+    for(uint64_t c = 0; c < channels; ++c) {
+        for(uint64_t y = 0; y < rows; ++y) {
+            for(uint64_t x = 0; x < cols; ++x) {
+                (*data)[y * channels * cols + x * channels + c] = nchwVector[c * (rows * cols) + y * cols + x];
+            }
+        }
+    }
+
+    cv::Mat image(rows, cols , CV_32FC3, (*data).data());
+    return image;
+}
+
+auto reorder_to_chw(cv::Mat* mat) {
+    std::vector<uint8_t> data(mat->channels() * mat->rows * mat->cols);
+    for(int y = 0; y < mat->rows; ++y) {
+        for(int x = 0; x < mat->cols; ++x) {
+            for(int c = 0; c < mat->channels(); ++c) {
+                data[c * (mat->rows * mat->cols) + y * mat->cols + x] = mat->at<cv::Vec3b>(y, x)[c];
+            }
+        }
+    }
+    return data;
+}
+
+auto nchw_to_mat(CustomNodeTensor input) {
+    std::vector<uint8_t> nchwVector(input.data, input.data + input.dataLength);
+    std::vector<uint8_t> *data = new std::vector<uint8_t>(nchwVector.size());
+
+    int channels = input.dims[1];
+    int rows = input.dims[2];
+    int cols = input.dims[3];
+
+    for(uint64_t c = 0; c < channels; ++c) {
+        for(uint64_t y = 0; y < rows; ++y) {
+            for(uint64_t x = 0; x < cols; ++x) {
+                (*data)[y * channels * cols + x * channels + c] = nchwVector[c * (rows * cols) + y * cols + x];
+            }
+        }
+    }
+
+    cv::Mat image(rows, cols , CV_8UC3, (*data).data());
+    return image;
+}
+
 cv::Mat nchw_to_mat(const CustomNodeTensor* input) {
     // std::vector<float> data(input->dataLength / sizeof(float));
     // std::cout << "Before: " << data.size() << std::endl;
