@@ -347,6 +347,7 @@ plugin_config_t ModelInstance::prepareDefaultPluginConfig(const ModelConfig& con
 Status ModelInstance::loadOVExecutableNetwork(const ModelConfig& config) {
     plugin_config_t pluginConfig = prepareDefaultPluginConfig(config);
     try {
+        // here?
         loadExecutableNetworkPtr(pluginConfig);
     } catch (std::exception& e) {
         Status status = StatusCode::CANNOT_LOAD_NETWORK_INTO_TARGET_DEVICE;
@@ -357,6 +358,8 @@ Status ModelInstance::loadOVExecutableNetwork(const ModelConfig& config) {
             getVersion(),
             config.getTargetDevice());
         return StatusCode::CANNOT_LOAD_NETWORK_INTO_TARGET_DEVICE;
+    } catch (...) {
+        SPDLOG_ERROR("HERE");
     }
     SPDLOG_INFO("Plugin config for device {}:", targetDevice);
     for (const auto pair : pluginConfig) {
@@ -479,6 +482,8 @@ Status ModelInstance::loadModelImpl(const ModelConfig& config, const DynamicMode
         SPDLOG_ERROR("exception occurred while loading network: {}", e.what());
         this->status.setLoading(ModelVersionStatusErrorCode::UNKNOWN);
         return StatusCode::NETWORK_NOT_LOADED;
+    } catch (...) {
+        SPDLOG_ERROR("HERE");
     }
     this->status.setAvailable();
     modelLoadedNotify.notify_all();
