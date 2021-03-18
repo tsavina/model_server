@@ -242,8 +242,9 @@ enum class StatusCode {
     NODE_LIBRARY_OUTPUT_MISSING_NAME,
 
     // Model control API
-    OK_NOT_RELOADED, /*!< Operation succeeded but no config reload was needed */
-    OK_RELOADED,     /*!< Operation succeeded but no config reload was needed */
+    OK_NOT_RELOADED,    /*!< Operation succeeded but no config reload was needed */
+    OK_RELOADED,        /*!< Operation succeeded but no config reload was needed */
+    CONTROL_API_FAILED, /*!< Operation failed */
 
     STATUS_CODE_END
 };

@@ -83,7 +83,7 @@ TEST_F(ConfigReload, nonExistingConfigFile) {
     auto status = handler.processConfigReloadRequest(response, manager);
     const char* expectedJson = "{\n\t\"error\": \"Config file not found or cannot open.\"\n}";
     EXPECT_EQ(expectedJson, response);
-    EXPECT_EQ(status, ovms::StatusCode::CONFIG_FILE_TIMESTAMP_READING_FAILED);
+    EXPECT_EQ(status, ovms::StatusCode::CONTROL_API_FAILED);
 }
 
 static const char* configWithModelNonExistingPath = R"(
@@ -112,7 +112,7 @@ TEST_F(ConfigReload, nonExistingModelPathInConfig) {
     auto status = handler.processConfigReloadRequest(response, manager);
     const char* expectedJson = "{\n\t\"error\": \"Reloading config file failed. Check server logs for more info.\"\n}";
     EXPECT_EQ(expectedJson, response);
-    EXPECT_EQ(status, ovms::StatusCode::PATH_INVALID);
+    EXPECT_EQ(status, ovms::StatusCode::CONTROL_API_FAILED);
 }
 
 static const char* configWithDuplicatedModelName = R"(
@@ -145,7 +145,7 @@ TEST_F(ConfigReload, duplicatedModelNameInConfig) {
     auto status = handler.processConfigReloadRequest(response, manager);
     const char* expectedJson = "{\n\t\"error\": \"Reloading config file failed. Check server logs for more info.\"\n}";
     EXPECT_EQ(expectedJson, response);
-    EXPECT_EQ(status, ovms::StatusCode::MODEL_NAME_OCCUPIED);
+    EXPECT_EQ(status, ovms::StatusCode::CONTROL_API_FAILED);
 }
 
 TEST_F(ConfigReload, startWith1DummyThenReload) {
@@ -308,7 +308,7 @@ TEST_F(ConfigReload, startWithMissingXmlThenAddAndReload) {
     auto status = handler.processConfigReloadRequest(response, manager);
 
     EXPECT_EQ(expectedJson1, response);
-    EXPECT_EQ(status, ovms::StatusCode::FILE_INVALID);
+    EXPECT_EQ(status, ovms::StatusCode::CONTROL_API_FAILED);
 
     std::filesystem::copy("/ovms/src/test/dummy/1/dummy.xml", "/tmp/dummy/1/dummy.xml", std::filesystem::copy_options::recursive);
 
@@ -597,7 +597,7 @@ TEST_F(ConfigReload, StartWith1DummyThenReloadToAddPipelineWithInvalidOutputs) {
     auto status = handler.processConfigReloadRequest(response, manager);
 
     EXPECT_EQ(expectedJson, response);
-    EXPECT_EQ(status, ovms::StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_DATA_SOURCE);
+    EXPECT_EQ(status, ovms::StatusCode::CONTROL_API_FAILED);
 }
 
 TEST_F(ConfigReload, reloadWithInvalidPipelineConfigManyThreads) {
@@ -615,7 +615,7 @@ TEST_F(ConfigReload, reloadWithInvalidPipelineConfigManyThreads) {
     std::function<void()> func = [&handler, &manager]() {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         std::string response;
-        EXPECT_EQ(handler.processConfigReloadRequest(response, manager), ovms::StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_DATA_SOURCE);
+        EXPECT_EQ(handler.processConfigReloadRequest(response, manager), ovms::StatusCode::CONTROL_API_FAILED);
     };
 
     for (int i = 0; i < numberOfThreads; i++) {
@@ -642,7 +642,7 @@ TEST_F(ConfigReload, reloadWithInvalidModelConfigManyThreads) {
     std::function<void()> func = [&handler, &manager]() {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         std::string response;
-        EXPECT_EQ(handler.processConfigReloadRequest(response, manager), ovms::StatusCode::MODEL_NAME_OCCUPIED);
+        EXPECT_EQ(handler.processConfigReloadRequest(response, manager), ovms::StatusCode::CONTROL_API_FAILED);
     };
 
     for (int i = 0; i < numberOfThreads; i++) {
@@ -708,7 +708,7 @@ TEST_F(ConfigReload, StartWith1DummyThenReloadToAddPipelineWithNonExistingModel)
     auto status = handler.processConfigReloadRequest(response, manager);
 
     EXPECT_EQ(expectedJson, response);
-    EXPECT_EQ(status, ovms::StatusCode::PIPELINE_NODE_REFERING_TO_MISSING_MODEL);
+    EXPECT_EQ(status, ovms::StatusCode::CONTROL_API_FAILED);
 }
 
 static const char* configWith2DummyPipelines = R"(

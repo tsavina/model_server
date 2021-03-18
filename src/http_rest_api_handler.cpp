@@ -362,7 +362,7 @@ Status HttpRestApiHandler::processConfigReloadRequest(std::string& response, Mod
         if (!reloadNeeded) {
             if (status == StatusCode::CONFIG_FILE_TIMESTAMP_READING_FAILED) {
                 response = createErrorJsonWithMessage("Config file not found or cannot open.");
-                return status;
+                return StatusCode::CONTROL_API_FAILED;
             }
         }
     }
@@ -371,14 +371,14 @@ Status HttpRestApiHandler::processConfigReloadRequest(std::string& response, Mod
         status = manager.loadConfig(config.configPath());
         if (!status.ok()) {
             response = createErrorJsonWithMessage("Reloading config file failed. Check server logs for more info.");
-            return status;
+            return StatusCode::CONTROL_API_FAILED;
         }
     } else {
         if (!status.ok()) {
             status = manager.loadConfig(config.configPath());
             if (!status.ok()) {
                 response = createErrorJsonWithMessage("Reloading config file failed. Check server logs for more info.");
-                return status;
+                return StatusCode::CONTROL_API_FAILED;
             }
             reloadNeeded = true;
         }
@@ -387,7 +387,7 @@ Status HttpRestApiHandler::processConfigReloadRequest(std::string& response, Mod
     status = manager.updateConfigurationWithoutConfigFile();
     if (!status.ok()) {
         response = createErrorJsonWithMessage("Reloading models versions failed. Check server logs for more info.");
-        return status;
+        return StatusCode::CONTROL_API_FAILED;
     }
     if (status == StatusCode::OK_RELOADED) {
         reloadNeeded = true;
@@ -397,13 +397,13 @@ Status HttpRestApiHandler::processConfigReloadRequest(std::string& response, Mod
     status = GetModelStatusImpl::getAllModelsStatuses(modelsStatuses, manager);
     if (!status.ok()) {
         response = createErrorJsonWithMessage("Retrieving all model statuses failed. Check server logs for more info.");
-        return status;
+        return StatusCode::CONTROL_API_FAILED;
     }
 
     status = GetModelStatusImpl::serializeModelsStatuses2Json(modelsStatuses, response);
     if (!status.ok()) {
         response = createErrorJsonWithMessage("Serializing model statuses to json failed. Check server logs for more info.");
-        return status;
+        return StatusCode::CONTROL_API_FAILED;
     }
 
     if (!reloadNeeded) {
@@ -421,13 +421,13 @@ Status HttpRestApiHandler::processConfigStatusRequest(std::string& response, Mod
     status = GetModelStatusImpl::getAllModelsStatuses(modelsStatuses, manager);
     if (!status.ok()) {
         response = createErrorJsonWithMessage("Retrieving all model statuses failed.");
-        return status;
+        return StatusCode::CONTROL_API_FAILED;
     }
 
     status = GetModelStatusImpl::serializeModelsStatuses2Json(modelsStatuses, response);
     if (!status.ok()) {
         response = createErrorJsonWithMessage("Serializing model statuses to json failed.");
-        return status;
+        return StatusCode::CONTROL_API_FAILED;
     }
 
     return StatusCode::OK;

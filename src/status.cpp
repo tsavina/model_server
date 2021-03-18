@@ -345,6 +345,9 @@ const std::map<const StatusCode, net_http::HTTPStatusCode> Status::httpStatusMap
 
     // GetModelStatus
     {StatusCode::INTERNAL_ERROR, net_http::HTTPStatusCode::ERROR},
+
+    // Model Control Api
+    {StatusCode::CONTROL_API_FAILED, net_http::HTTPStatusCode::PRECOND_FAILED},
 };
 
 }  // namespace ovms
