@@ -15,10 +15,14 @@
 #
 
 FROM quay.io/operator-framework/helm-operator:v1.4.0
-LABEL "Description"="OpenVINO(TM) Model Server Operator"
-LABEL "Vendor"="Intel Corporation"
+LABEL "name"="ovms-operator"
+LABEL "vendor"="Intel Corporation"
+LABEL "version"="0.1.0"
+LABEL "release"="0.1"
+LABEL "summary"="OpenVINO(TM) Model Server Operator"
+LABEL "description"="An Operator for managing OpenVINO Model Server in Kubernetes and OpenShift"
 ENV HOME=/opt/helm
 COPY watches.yaml ${HOME}/watches.yaml
 COPY helm-charts  ${HOME}/helm-charts
-COPY LICENSE LICENSE
+COPY LICENSE /licenses/LICENSE
 WORKDIR ${HOME}
