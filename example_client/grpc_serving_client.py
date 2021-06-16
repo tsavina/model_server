@@ -127,8 +127,10 @@ while iteration <= iterations:
         else:
             request.inputs[args['input_name']].CopyFrom(make_tensor_proto(img, shape=(img.shape)))
         start_time = datetime.datetime.now()
+        channel = grpc.insecure_channel(address)
         stub = prediction_service_pb2_grpc.PredictionServiceStub(channel)
         result = stub.Predict(request, 10.0) # result includes a dictionary with all model outputs
+        channel.close()
         end_time = datetime.datetime.now()
         if args['output_name'] not in result.outputs:
             print("Invalid output name", args['output_name'])
