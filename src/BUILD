@@ -31,9 +31,10 @@ cc_library(
         "customnodesession.cpp",
         "customnodesession.hpp",
         "customloaderconfig.hpp",
-	    "customloaders.hpp",
-	    "customloaders.cpp",
+        "customloaders.hpp",
+        "customloaders.cpp",
         "customloaderinterface.hpp",
+        "deserialization.cpp",
         "deserialization.hpp",
         "dl_node.cpp",
         "dl_node.hpp",
@@ -180,6 +181,7 @@ cc_library(
         "-Wall",
         "-Wno-unknown-pragmas",
         "-Werror",
+        "-Wno-sign-compare",
     ],
 )
 

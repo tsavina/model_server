@@ -9,11 +9,13 @@ These samples include python scripts and installation steps to use OpenVINO&trad
 - [ONNX model serving](ovms_onnx_example.md)
 - [Person-Vehicle-Bike Detection](./face_detection_script_example.md#running-person-vehicle-detection-with-example-script) : Detection of Person and Vehicles using OpenVINO&trade; Model Server with python example.
 - [Age Gender Classification](./age_gender_guide.md) : Classification of Age Gender using OpenVINO&trade; Model Server.
+- [Processing frames from camera in parallel](./camera_example.md) : Horizontal text detection in real-time
 - [Binary Input](./binary_input.md) Sending prediction requests with images in JPEG or PNG format.
 - [DAG Scheduler pipeline with models ensemble](ensemble_scheduler.md)
 - [DAG Scheduler with OCR pipeline](east_ocr.md)
 - [DAG Scheduler pipeline with combined models](combined_model_dag.md)
 - [DAG Scheduler with vehicle detection](vehicles_analysis_dag.md)
+- [Dynamic batch size with demultiplexer](dynamic_batch_size.md)
 - [Stateful model for audio recognition](stateful_models.md)     
 - [Clients for gRPC and REST API calls](https://github.com/openvinotoolkit/model_server/tree/main/example_client) : Example python scripts for gRPC and REST API calls with resnet classification models
 
