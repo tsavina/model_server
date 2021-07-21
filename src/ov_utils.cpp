@@ -103,7 +103,6 @@ std::string getTensorMapString(const std::map<std::string, std::shared_ptr<Tenso
         auto effectiveShape = inputInfo->getEffectiveShape();
 
         stringStream << "\nname: " << name
-                     << "; mapping: " << inputInfo->getMappedName()
                      << "; shape: " << TensorInfo::shapeToString(shape)
                      << "; effective shape: " << TensorInfo::shapeToString(effectiveShape)
                      << "; precision: " << TensorInfo::getPrecisionAsString(precision)

@@ -229,9 +229,7 @@ public:
             return status;
 
         timer.start("deserialize");
-        ovms::InputSink<InferRequest&> inputSink(inferRequest);
-        bool isPipeline = false;
-        status = ovms::deserializePredictRequest<ovms::ConcreteTensorProtoDeserializator>(*requestProto, getInputsInfo(), inputSink, isPipeline);
+        status = ovms::deserializePredictRequest<ovms::ConcreteTensorProtoDeserializator>(*requestProto, getInputsInfo(), inferRequest);
         timer.stop("deserialize");
         if (!status.ok())
             return status;
