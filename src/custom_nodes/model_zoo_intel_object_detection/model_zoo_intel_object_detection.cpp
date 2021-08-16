@@ -13,9 +13,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //*****************************************************************************
+#include <atomic>
 #include <iostream>
 #include <string>
 #include <vector>
+#include <chrono>
 
 #include "../../custom_node_interface.h"
 #include "opencv2/opencv.hpp"
@@ -27,13 +29,32 @@ static constexpr const char* OUTPUT_IMAGES_TENSOR_NAME = "images";
 static constexpr const char* OUTPUT_COORDINATES_TENSOR_NAME = "coordinates";
 static constexpr const char* OUTPUT_CONFIDENCES_TENSOR_NAME = "confidences";
 
+using std::chrono::high_resolution_clock;
+using std::chrono::milliseconds;
+using std::chrono::microseconds;
+using std::chrono::duration_cast;
+
+std::atomic<uint64_t> bufferSelector{0};
+static uint64_t SIZE = 1741824 / sizeof(float);
+static uint64_t LIMIT = 100;
+static void* memoryPool = malloc(SIZE * LIMIT * sizeof(float));
+
+// 1741824
+float* getBuffer(uint64_t size) {
+        uint64_t id = (bufferSelector++) % LIMIT;
+        return ((float*)memoryPool + SIZE * id);
+// float* buffer = (float*)malloc(byteSize);
+//    return (float*)malloc(size);
+}
+
 bool copy_images_into_output(struct CustomNodeTensor* output, const std::vector<cv::Rect>& boxes, const cv::Mat& originalImage, int targetImageHeight, int targetImageWidth, const std::string& targetImageLayout, bool convertToGrayScale) {
     const uint64_t outputBatch = boxes.size();
     int channels = convertToGrayScale ? 1 : 3;
 
     uint64_t byteSize = sizeof(float) * targetImageHeight * targetImageWidth * channels * outputBatch;
-
-    float* buffer = (float*)malloc(byteSize);
+ //   std::cout << "Byte: " << byteSize << std::endl;
+    
+    float* buffer = getBuffer(byteSize);
     NODE_ASSERT(buffer != nullptr, "malloc has failed");
     if (buffer == nullptr) {
         return false;
@@ -133,6 +154,7 @@ void cleanup(CustomNodeTensor& tensor) {
 }
 
 int execute(const struct CustomNodeTensor* inputs, int inputsCount, struct CustomNodeTensor** outputs, int* outputsCount, const struct CustomNodeParam* params, int paramsCount) {
+    auto t1 = high_resolution_clock::now();
     // Parameters reading
     int originalImageHeight = get_int_parameter("original_image_height", params, paramsCount, -1);
     int originalImageWidth = get_int_parameter("original_image_width", params, paramsCount, -1);
@@ -273,7 +295,11 @@ int execute(const struct CustomNodeTensor* inputs, int inputsCount, struct Custo
         free(*outputs);
         return 1;
     }
+    auto t2 = high_resolution_clock::now();
+    if (0) {
 
+    std::cout<< "total time:" << duration_cast<milliseconds>(t2 - t1).count() << "." << duration_cast<microseconds>(t2 - t1).count() % 1000 << " ms" <<std::endl;
+    }
     return 0;
 }
 
@@ -368,6 +394,13 @@ int getOutputsInfo(struct CustomNodeTensorInfo** info, int* infoCount, const str
 }
 
 int release(void* ptr) {
+    char* cptr = (char*) ptr;
+    if ((char*)memoryPool <= cptr &&
+        cptr <= ((char*)memoryPool + SIZE * LIMIT * sizeof(float))) {
+   //     std::cout << "HURA" << std::endl;
+        return 0;
+    }
+ //       std::cout << "NIEHURA" << std::endl;
     free(ptr);
     return 0;
 }

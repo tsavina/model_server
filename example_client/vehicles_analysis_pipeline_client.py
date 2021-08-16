@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 
+import datetime
 import grpc
 import cv2
 import os
@@ -34,6 +35,8 @@ parser.add_argument('--image_width', required=False, default=600, help='Pipeline
 parser.add_argument('--image_height', required=False, default=400, help='Pipeline input image height. default: 400')
 parser.add_argument('--input_image_layout', required=False, default='NHWC', choices=['NCHW', 'NHWC', 'BINARY'], help='Pipeline input image layout. default: NHWC')
 
+parser.add_argument('--iterations', required=False, default=1, help='Pipeline input image height. default: 400')
+parser.add_argument('--batch_size', required=False, default=1, help='Pipeline input image height. default: 400')
 args = vars(parser.parse_args())
 
 def prepare_img_input_in_nchw_format(request, name, path, resize_to_shape):
@@ -114,15 +117,23 @@ elif args['input_image_layout'] == 'NHWC':
 else:
     prepare_img_input_in_binary_format(request, args['image_input_name'], args['image_input_path'])
 
-try:
-    response = stub.Predict(request, 30.0)
-except grpc.RpcError as err:
-    if err.code() == grpc.StatusCode.ABORTED:
-        print('No vehicle has been found in the image')
-        exit(1)
-    else:
-        raise err
+for i in range(int(args["iterations"])):
+    try:
+        start_time = datetime.datetime.now()
+        response = stub.Predict(request, 30.0)
+        end_time = datetime.datetime.now()
+        duration = (end_time - start_time).total_seconds() * 1000
+        print('Iteration {}; Processing time: {:.2f} ms;'.format(i, round(np.average(duration), 2)))
+    except grpc.RpcError as err:
+        if err.code() == grpc.StatusCode.ABORTED:
+            print('No vehicle has been found in the image')
+            exit(1)
+        else:
+            raise err
+    #print("Iteration:{}".format(i))
 
+print("Koneic")
+exit(0)
 vehicles = []
 
 for name in response.outputs:
