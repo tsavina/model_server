@@ -165,6 +165,43 @@ TEST_F(EnsembleFlowTest, DummyModel) {
     checkDummyResponse(dummySeriallyConnectedCount);
 }
 
+TEST_F(EnsembleFlowTest, DummyModel_Crash) {
+    // Most basic configuration, just process single dummy model request
+    // input   dummy    output
+    //  O------->O------->O
+    ConstructorEnabledModelManager managerWithDummyModel;
+    managerWithDummyModel.reloadModelWithVersions(config);
+
+    const std::vector<float> bs1requestData{-5.0};
+    request.Clear();
+    tensorflow::TensorProto& proto = (*request.mutable_inputs())[customPipelineInputName];
+    proto.set_dtype(tensorflow::DataType::DT_FLOAT);
+    proto.mutable_tensor_content()->assign((char*)bs1requestData.data(), bs1requestData.size() * sizeof(float));
+    proto.mutable_tensor_shape()->add_dim()->set_size(1);
+    proto.mutable_tensor_shape()->add_dim()->set_size(DUMMY_MODEL_INPUT_SIZE);
+    for (int i = 0; i < 3000; i++) {
+        proto.mutable_tensor_shape()->add_dim()->set_size(2);
+    }
+
+    // Configure pipeline
+    const tensor_map_t inputsInfo{{customPipelineInputName, dagDummyModelInputTensorInfo}};
+    auto input_node = std::make_unique<EntryNode>(&request, inputsInfo);
+    auto model_node = std::make_unique<DLNode>("dummy_node", dummyModelName, requestedModelVersion, managerWithDummyModel);
+    const tensor_map_t outputsInfo{{customPipelineOutputName, dagDummyModelOutputTensorInfo}};
+    auto output_node = std::make_unique<ExitNode>(&response, outputsInfo);
+    Pipeline pipeline(*input_node, *output_node);
+    pipeline.connect(*input_node, *model_node, {{customPipelineInputName, DUMMY_MODEL_INPUT_NAME}});
+    pipeline.connect(*model_node, *output_node, {{DUMMY_MODEL_OUTPUT_NAME, customPipelineOutputName}});
+
+    pipeline.push(std::move(input_node));
+    pipeline.push(std::move(model_node));
+    pipeline.push(std::move(output_node));
+
+    pipeline.execute();
+    const int dummySeriallyConnectedCount = 1;
+    checkDummyResponse(dummySeriallyConnectedCount);
+}
+
 TEST_F(EnsembleFlowTest, DummyModelDirectAndPipelineInference) {
     ConstructorEnabledModelManager managerWithDummyModel;
     config.setNireq(1);
