@@ -45,7 +45,9 @@ limitations under the License.
 #include "opencv2/opencv.hpp"
 
 using grpc::Channel;
+using grpc::ClientAsyncResponseReader;
 using grpc::ClientContext;
+using grpc::CompletionQueue;
 using grpc::Status;
 
 using tensorflow::serving::PredictionService;
@@ -53,6 +55,13 @@ using tensorflow::serving::PredictRequest;
 using tensorflow::serving::PredictResponse;
 
 typedef google::protobuf::Map<tensorflow::string, tensorflow::TensorProto> OutMap;
+
+struct AsyncClientCall {
+    PredictResponse reply;
+    ClientContext context;
+    Status status;
+    std::unique_ptr<ClientAsyncResponseReader<PredictResponse>> response_reader;
+};
 
 struct Entry {
     tensorflow::string imagePath;
@@ -159,6 +168,7 @@ bool readImagesCvMat(const std::vector<Entry>& entriesIn, std::vector<CvMatData>
 
 class ServingClient {
     std::unique_ptr<PredictionService::Stub> stub_;
+    CompletionQueue cq_;
 
 public:
     ServingClient(std::shared_ptr<Channel> channel) :
@@ -211,7 +221,7 @@ public:
 
     // Post-processing function for resnet classification.
     // Most probable label is selected from the output.
-    bool interpretOutputs(google::protobuf::Map<tensorflow::string, tensorflow::TensorProto>& outputs, const tensorflow::string& outputName, tensorflow::int64& predictedLabel) {
+    static bool interpretOutputs(google::protobuf::Map<tensorflow::string, tensorflow::TensorProto>& outputs, const tensorflow::string& outputName, tensorflow::int64& predictedLabel) {
         auto it = outputs.find(outputName);
         if (it == outputs.end()) {
             std::cout << "cannot find output " << outputName << std::endl;
@@ -224,7 +234,7 @@ public:
             std::cout << "the result tensor[" << it->first << "] convert failed." << std::endl;
             return false;
         }
-        predictedLabel = this->argmax(tensor);
+        predictedLabel = argmax(tensor);
         return true;
     }
 
@@ -248,31 +258,16 @@ public:
         // Packing image into gRPC message.
         this->prepareInputs(inputs, entry, inputName);
 
+        ::grpc::CompletionQueue cq;
         // Actual predict request.
         auto start = std::chrono::high_resolution_clock::now();
-        Status status = stub_->Predict(&context, predictRequest, &response);
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::high_resolution_clock::now() - start);
-
-        // gRPC error handling.
-        if (!status.ok()) {
-            std::cout << "gRPC call return code: " << status.error_code() << ": "
-                      << status.error_message() << std::endl;
-            return false;
-        }
-
-        std::cout << "call predict ok" << std::endl;
-        std::cout << "call predict time: " << duration.count() / 1000 << "ms" << std::endl;
-        std::cout << "outputs size is " << response.outputs_size() << std::endl;
-
-        // Post-processing step.
-        // Extracting most probable label from resnet output.
-        tensorflow::int64 predictedLabel = -1;
-        if (!this->interpretOutputs(*response.mutable_outputs(), outputName, predictedLabel)) {
-            return false;
-        }
-        isLabelCorrect = predictedLabel == entry.expectedLabel;
-
+        AsyncClientCall* call = new AsyncClientCall;
+        call->response_reader =
+            stub_->PrepareAsyncPredict(&call->context, predictRequest, &cq_);
+        call->response_reader->StartCall();
+        call->response_reader->Finish(&call->reply, &call->status, (void*)call);
         return true;
     }
 
@@ -286,14 +281,29 @@ public:
         tensorflow::int64 iterations) {
         auto begin = std::chrono::high_resolution_clock::now();
         tensorflow::int64 correctLabels = 0;
+        ServingClient clientR(grpc::CreateChannel(address, grpc::InsecureChannelCredentials()));
         for (tensorflow::int64 i = 0; i < iterations; i++) {
-            ServingClient client(grpc::CreateChannel(address, grpc::InsecureChannelCredentials()));
             bool isLabelCorrect = false;
-            if (!client.predict(modelName, inputName, outputName, entries[i % entries.size()], isLabelCorrect)) {
+            if (!clientR.predict(modelName, inputName, outputName, entries[i % entries.size()], isLabelCorrect)) {
                 return;
             }
             if (isLabelCorrect) {
                 correctLabels++;
+            }
+        }
+        // here get responses
+        void* got_tag;
+        bool ok = false;
+        std::cout << "now waiting for responses:" << std::endl;
+        while (clientR.cq_.Next(&got_tag, &ok)) {
+            AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
+            auto& response = call->reply;
+            std::cout << "Got reply" << std::endl;
+            tensorflow::int64 predictedLabel = -1;
+            if (!interpretOutputs(*response.mutable_outputs(), outputName, predictedLabel)) {
+                std::cout << "Got NOK reply" << std::endl;
+            } else {
+                std::cout << "Got OK reply" << std::endl;
             }
         }
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
