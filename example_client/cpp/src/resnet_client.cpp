@@ -248,22 +248,34 @@ public:
         // Packing image into gRPC message.
         this->prepareInputs(inputs, entry, inputName);
 
+        ::grpc::CompletionQueue cq;
         // Actual predict request.
-        auto start = std::chrono::high_resolution_clock::now();
-        Status status = stub_->Predict(&context, predictRequest, &response);
+                        auto start = std::chrono::high_resolution_clock::now();
+        //Status status = stub_->Predict(&context, predictRequest, &cq);
+        std::cout << __LINE__ << "call predict ok" << std::endl;
+        stub_->PrepareAsyncPredict(&context, predictRequest, &cq);
+        std::cout << __LINE__ << "call predict ok" << std::endl;
+        stub_->AsyncPredict(&context, predictRequest, &cq);
+        std::cout << __LINE__ << "call predict ok" << std::endl;
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(
             std::chrono::high_resolution_clock::now() - start);
-
+        Status status;
         // gRPC error handling.
         if (!status.ok()) {
             std::cout << "gRPC call return code: " << status.error_code() << ": "
                       << status.error_message() << std::endl;
             return false;
         }
-
-        std::cout << "call predict ok" << std::endl;
+        void* got_tag;
+        bool ok = false;
+        std::cout << __LINE__ << "call predict ok" << std::endl;
+        cq.Next(&got_tag, &ok);
+        std::cout << __LINE__ << "call predict ok" << std::endl;
+        PredictResponse* response2 = static_cast<PredictResponse*>(got_tag);
+        std::cout << __LINE__ << "call predict ok" << std::endl;
         std::cout << "call predict time: " << duration.count() / 1000 << "ms" << std::endl;
         std::cout << "outputs size is " << response.outputs_size() << std::endl;
+        std::cout << "outputs size is " << response2->outputs_size() << std::endl;
 
         // Post-processing step.
         // Extracting most probable label from resnet output.
