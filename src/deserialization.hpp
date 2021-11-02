@@ -137,7 +137,9 @@ Status deserializePredictRequest(
                     SPDLOG_DEBUG("Binary inputs conversion failed.");
                     return status;
                 }
+                SPDLOG_INFO("BLOB_CREATION: Blob allocated and copied into => From Binary Request");
             } else {
+                SPDLOG_INFO("BLOB_CREATION: Blob points to PredictRequest data => From Tensor Content");
                 blob = deserializeTensorProto<TensorProtoDeserializator>(
                     requestInput, tensorInfo, isPipeline);
             }

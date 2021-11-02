@@ -107,6 +107,7 @@ Status DLNode::fetchResults(BlobMap& outputs, InferenceEngine::InferRequest& inf
                     getName(), sessionKey, modelName, realModelOutputName);
                 InferenceEngine::Blob::Ptr copiedBlob;
                 auto status = blobClone(copiedBlob, blob);
+                SPDLOG_INFO("BLOB_CREATION: Blob received as result from {} is cloned - {}; {} bytes", getName(), output_name, blob->byteSize());
                 if (!status.ok()) {
                     SPDLOG_LOGGER_DEBUG(dag_executor_logger, "Could not clone result blob; node: {}; session: {}; model name: {}; output: {}",
                         getName(),
@@ -123,6 +124,7 @@ Status DLNode::fetchResults(BlobMap& outputs, InferenceEngine::InferRequest& inf
             SPDLOG_LOGGER_DEBUG(dag_executor_logger, "Node: {} session: {} Blob with name {} has been prepared", getName(), sessionKey, output_name);
         }
     }
+
     return StatusCode::OK;
 }
 

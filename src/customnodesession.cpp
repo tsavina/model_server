@@ -42,6 +42,7 @@ Status CustomNodeSession::execute(PipelineEventQueue& notifyEndQueue, Node& node
     const auto& blobMap = this->inputHandler->getInputs();
     auto inputTensorsCount = blobMap.size();
     auto inputTensors = createCustomNodeTensorArray(blobMap);
+    SPDLOG_INFO("BLOB_USAGE: Blob converted for Custom Node Execution, node name: {}", getName());
     struct CustomNodeTensor* outputTensors = nullptr;
     int outputTensorsCount = 0;
 
@@ -88,6 +89,7 @@ Status CustomNodeSession::execute(PipelineEventQueue& notifyEndQueue, Node& node
     for (int i = 0; i < outputTensorsCount; i++) {
         InferenceEngine::Blob::Ptr resultBlob;
         auto result = this->createBlob(&outputTensors[i], resultBlob, library, customNodeLibraryInternalManager);
+        SPDLOG_INFO("BLOB_CREATION: Generating blob out of custom node result without copy, node: {}", getName());
         if (outputTensors[i].name == nullptr) {
             SPDLOG_LOGGER_ERROR(dag_executor_logger, "Node {}; session: {}; failed blob conversion - missing output name", getName(), getSessionKey());
             status = StatusCode::NODE_LIBRARY_OUTPUT_MISSING_NAME;

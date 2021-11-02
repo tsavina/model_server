@@ -266,6 +266,7 @@ Status DLNodeSession::setInputsForInference(InferenceEngine::InferRequest& infer
         status = StatusCode::OV_INTERNAL_DESERIALIZATION_ERROR;
         SPDLOG_LOGGER_DEBUG(dag_executor_logger, "[Node: {}] {}; with unknown exception", getName(), status.string());
     }
+    //SPDLOG_INFO("BLOB_USAGE: InferRequest has received previously generated blob (model: {})", this->getName());
     return status;
 }
 

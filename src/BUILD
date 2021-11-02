@@ -271,6 +271,17 @@ cc_binary(
     ],
     linkshared = 1,
 )
+
+cc_binary(
+    name = "my_app",
+    srcs = [
+        "my_app.cpp",
+    ],
+    deps = [
+        "@openvino//:openvino",
+    ],
+)
+
 cc_binary(
     name = "lib_node_perform_different_operations.so",
     srcs = [
