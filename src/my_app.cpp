@@ -1,6 +1,7 @@
 #include <inference_engine.hpp>
 #include <iostream>
 
+
 int main() {
     InferenceEngine::SizeVector shape{1, 4};
     std::cout << "1111" << std::endl;

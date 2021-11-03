@@ -283,6 +283,16 @@ cc_binary(
 )
 
 cc_binary(
+    name = "my_app_new_api",
+    srcs = [
+        "my_app_new_api.cpp",
+    ],
+    deps = [
+        "@openvino//:openvino",
+    ],
+)
+
+cc_binary(
     name = "lib_node_perform_different_operations.so",
     srcs = [
         "test/custom_nodes/node_perform_different_operations.cpp",
