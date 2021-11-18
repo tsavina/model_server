@@ -78,18 +78,22 @@ bool copy_images_into_output(struct CustomNodeTensor* output, const std::vector<
     if (!get_buffer<float>(internalManager, &buffer, OUTPUT_IMAGES_TENSOR_NAME, byteSize))
         return false;
 
+    std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
     cv::Size targetShape(targetImageWidth, targetImageHeight);
     for (uint64_t i = 0; i < outputBatch; i++) {
         cv::Mat image;
 
+    std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
         if (!crop_rotate_resize(originalImage, image, boxes[i], 0.0, boxes[i].width, boxes[i].height, targetShape)) {
             std::cout << "box is outside of original image" << std::endl;
             release(buffer, internalManager);
             return false;
         }
+    std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
         if (convertToGrayScale) {
             image = apply_grayscale(image);
         }
+    std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
         if (targetImageLayout == "NCHW") {
             auto imgBuffer = reorder_to_nchw((float*)image.data, image.rows, image.cols, image.channels());
             std::memcpy(buffer + (i * channels * targetImageWidth * targetImageHeight), imgBuffer.data(), byteSize / outputBatch);
@@ -335,8 +339,10 @@ int execute(const struct CustomNodeTensor* inputs, int inputsCount, struct Custo
     cv::Mat image;
     if (originalImageLayout == "NHWC") {
         image = nhwc_to_mat(imageTensor);
+    std::cout << __FILE__ << ":" << __LINE__ << " HERE:";
     } else {
         image = nchw_to_mat(imageTensor);
+    std::cout << __FILE__ << ":" << __LINE__ << " HERE:";
     }
 
     NODE_ASSERT(image.cols == imageWidth, "Mat generation failed");
@@ -369,26 +375,36 @@ int execute(const struct CustomNodeTensor* inputs, int inputsCount, struct Custo
             boxes.emplace_back(box);
             detections.emplace_back(detection[3], detection[4], detection[5], detection[6]);
             confidences.emplace_back(confidence);
+    std::cout << __FILE__ << ":" << __LINE__ << " HERE:"
+            << xMin << ","
+            << xMax << ","
+            << yMin << ","
+            << yMax << ","
+            << std::endl;
             if (debugMode) {
                 std::cout << "Detection:\nImageID: " << imageId << "; LabelID:" << labelId << "; Confidence:" << confidence << "; Box:" << box << std::endl;
             }
+    std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
         }
     }
-
+    std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
     NODE_ASSERT(boxes.size() == confidences.size(), "boxes and confidences are not equal length");
     if (boxes.size() > maxOutputBatch) {
         boxes.resize(maxOutputBatch);
         confidences.resize(maxOutputBatch);
     }
 
+    std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
     std::shared_lock lock(internalManagerLock);
     CustomNodeLibraryInternalManager* internalManager = static_cast<CustomNodeLibraryInternalManager*>(customNodeLibraryInternalManager);
 
+    std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
     *outputsCount = 3;
     if (!get_buffer<struct CustomNodeTensor>(internalManager, outputs, OUTPUT_TENSOR_NAME, 3 * sizeof(CustomNodeTensor))) {
         return 1;
     }
 
+    std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
     CustomNodeTensor& imagesTensor = (*outputs)[0];
     imagesTensor.name = OUTPUT_IMAGES_TENSOR_NAME;
     if (!copy_images_into_output(&imagesTensor, boxes, image, targetImageHeight, targetImageWidth, targetImageLayout, convertToGrayScale, internalManager)) {
@@ -396,6 +412,7 @@ int execute(const struct CustomNodeTensor* inputs, int inputsCount, struct Custo
         return 1;
     }
 
+    std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
     CustomNodeTensor& coordinatesTensor = (*outputs)[1];
     coordinatesTensor.name = OUTPUT_COORDINATES_TENSOR_NAME;
     if (!copy_coordinates_into_output(&coordinatesTensor, detections, internalManager)) {
@@ -404,6 +421,7 @@ int execute(const struct CustomNodeTensor* inputs, int inputsCount, struct Custo
         return 1;
     }
 
+    std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
     CustomNodeTensor& confidencesTensor = (*outputs)[2];
     confidencesTensor.name = OUTPUT_CONFIDENCES_TENSOR_NAME;
     if (!copy_confidences_into_output(&confidencesTensor, confidences, internalManager)) {

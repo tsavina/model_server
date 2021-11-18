@@ -83,22 +83,54 @@ bool crop_rotate_resize(cv::Mat originalImage, cv::Mat& targetImage, cv::Rect ro
         cv::Mat cropped = originalImage(roi);
 
         cv::Mat rotated;
+    std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
         if (angle != 0.0) {
             cv::Mat rotationMatrix = cv::getRotationMatrix2D(cv::Point2f(cropped.size().width / 2, cropped.size().height / 2), angle, 1.0);
             cv::warpAffine(cropped, rotated, rotationMatrix, cropped.size());
+    std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
         } else {
             rotated = cropped;
         }
         cv::Mat rotatedSlicedImage;
+    std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
         if (angle != 0.0) {
             int sliceOffset = (rotated.size().height - originalTextHeight) / 2;
             rotatedSlicedImage = rotated(cv::Rect(0, sliceOffset, rotated.size().width, originalTextHeight));
+    std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
         } else {
             rotatedSlicedImage = rotated;
+    std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
         }
-        cv::resize(rotatedSlicedImage, targetImage, targetShape);
+    std::cout << __FILE__ << ":" << __LINE__ << " Here. OriginTextWidth:"
+            << originalTextWidth 
+            << " originalTextHeight:" 
+            << originalTextHeight
+            << " targetShape.height:" 
+            << targetShape.height
+            << " targetShape.width:"
+            << targetShape.width
+            << " angle:" 
+            << angle
+            << "roi (x,y):(" << roi.x << "," << roi.y << ")" << std::endl;
+    int nDims = originalImage.dims;
+    std::cout << "originalImageDims:[";
+    for (auto i = 0; i < nDims; ++i) {
+        std::cout << originalImage.size[i] << ",";
+    }
+    std::cout << "]" << std::endl;
+    nDims = targetImage.dims;
+    std::cout << "targetImageDims:[";
+    for (auto i = 0; i < nDims; ++i) {
+        std::cout << targetImage.size[i] << ",";
+    }
+    std::cout << "]" << std::endl;
+    std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
+    std::cout << cv::getBuildInformation() << std::endl;
+    cv::resize(rotatedSlicedImage, targetImage, targetShape);
+    std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
     } catch (const cv::Exception& e) {
         std::cout << e.what() << std::endl;
+    std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
         return false;
     }
     return true;
