@@ -80,6 +80,10 @@ bool crop_rotate_resize(cv::Mat originalImage, cv::Mat& targetImage, cv::Rect ro
         roi.y = roi.y < 0 ? 0 : roi.y;
         roi.width = roi.width + roi.x > originalImage.size().width ? originalImage.size().width - roi.x : roi.width;
         roi.height = roi.height + roi.y > originalImage.size().height ? originalImage.size().height - roi.y : roi.height;
+        std::stringstream imgIdStr0;
+        static int imgid = 0;
+        imgIdStr0 << "original" << imgid << ".png";
+        std::cout << "Saved:" << cv::imwrite(imgIdStr0.str().c_str(), originalImage) << std::endl;
         cv::Mat cropped = originalImage(roi);
 
         cv::Mat rotated;
@@ -126,6 +130,9 @@ bool crop_rotate_resize(cv::Mat originalImage, cv::Mat& targetImage, cv::Rect ro
     std::cout << "]" << std::endl;
     std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
     std::cout << cv::getBuildInformation() << std::endl;
+    std::stringstream imgIdStr;
+    imgIdStr << "rotSlicImg_" << imgid++ << ".png";
+    std::cout << "Saved:" << cv::imwrite(imgIdStr0.str().c_str(), rotatedSlicedImage) << std::endl;
     cv::resize(rotatedSlicedImage, targetImage, targetShape);
     std::cout << __FILE__ << ":" << __LINE__ << " Here" << std::endl;
     } catch (const cv::Exception& e) {
