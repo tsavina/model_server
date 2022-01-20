@@ -100,6 +100,8 @@ cc_library(
         "gathernodeinputhandler.hpp",
         "gcsfilesystem.cpp",
         "gcsfilesystem.hpp",
+        "kfs_grpc_inference_service.cpp",
+        "kfs_grpc_inference_service.hpp",
         "model.cpp",
         "model.hpp",
         "model_version_policy.cpp",
@@ -420,7 +422,6 @@ cc_binary(
     ],
     deps = [
         "//src:ovms_lib",
-        "//src:kfserving_api_cpp",
     ]
 )
 
