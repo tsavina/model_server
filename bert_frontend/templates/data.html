@@ -1,0 +1,15 @@
+{% for key,value in form_data.items() %}
+<h2> {{key}}</h2>
+<p> {{value}}</p>
+{% endfor %}
+
+<h2>results</h2>
+{{answer|safe}}
+
+<br>
+<br>
+<center>
+<form action="/search" method = "GET">
+    <p><input type = "submit" value = "Back" /></p>
+</form>
+</center>
