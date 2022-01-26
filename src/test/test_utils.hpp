@@ -126,6 +126,30 @@ static tensorflow::serving::PredictRequest preparePredictRequest(inputs_info_t r
             input.mutable_tensor_shape()->add_dim()->set_size(dim);
             numberOfElements *= dim;
         }
+        if (dtype == tensorflow::DataType::DT_HALF) {
+            if (data.size() == 0) {
+                for (size_t i = 0; i < numberOfElements; i++) {
+                    input.add_half_val('1');
+                }
+            } else {
+                for (size_t i = 0; i < data.size(); i++) {
+                    input.add_half_val(data[i]);
+                }
+            }
+            break;
+        }
+        if (dtype == tensorflow::DataType::DT_UINT16) {
+            if (data.size() == 0) {
+                for (size_t i = 0; i < numberOfElements; i++) {
+                    input.add_int_val('1');
+                }
+            } else {
+                for (size_t i = 0; i < data.size(); i++) {
+                    input.add_int_val(data[i]);
+                }
+            }
+            break;
+        }
         if (data.size() == 0) {
             *input.mutable_tensor_content() = std::string(numberOfElements * tensorflow::DataTypeSize(dtype), '1');
         } else {
@@ -264,3 +288,39 @@ extern bool isShapeTheSame(const tensorflow::TensorShapeProto&, const std::vecto
 
 void readRgbJpg(size_t& filesize, std::unique_ptr<char[]>& image_bytes);
 void readImage(const std::string& path, size_t& filesize, std::unique_ptr<char[]>& image_bytes);
+
+static const std::vector<ovms::Precision> SUPPORTED_INPUT_PRECISIONS{
+    // ovms::Precision::UNSPECIFIED,
+    // ovms::Precision::MIXED,
+    ovms::Precision::FP64,
+    ovms::Precision::FP32,
+    ovms::Precision::FP16,
+    // InferenceEngine::Precision::Q78,
+    ovms::Precision::I16,
+    ovms::Precision::U8,
+    ovms::Precision::I8,
+    ovms::Precision::U16,
+    ovms::Precision::I32,
+    ovms::Precision::I64,
+    // ovms::Precision::BIN,
+    // ovms::Precision::BOOL
+    // ovms::Precision::CUSTOM)
+};
+
+static const std::vector<ovms::Precision> UNSUPPORTED_INPUT_PRECISIONS{
+    ovms::Precision::UNDEFINED,
+    ovms::Precision::MIXED,
+    // ovms::Precision::FP64,
+    // ovms::Precision::FP32,
+    // ovms::Precision::FP16,
+    ovms::Precision::Q78,
+    // ovms::Precision::I16,
+    // ovms::Precision::U8,
+    // ovms::Precision::I8,
+    // ovms::Precision::U16,
+    // ovms::Precision::I32,
+    // ovms::Precision::I64,
+    ovms::Precision::BIN,
+    ovms::Precision::BOOL
+    // ovms::Precision::CUSTOM)
+};
