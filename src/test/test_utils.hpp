@@ -16,6 +16,7 @@
 #pragma once
 
 #include <filesystem>
+#include <functional>
 #include <map>
 #include <memory>
 #include <sstream>
@@ -188,11 +189,41 @@ void checkDummyResponse(const std::string outputName,
     const std::vector<float>& requestData,
     tensorflow::serving::PredictRequest& request, tensorflow::serving::PredictResponse& response, int seriesLength, int batchSize = 1);
 
+template <typename T>
+std::string readableError(const T* expected_output, const T* actual_output, const size_t size) {
+    std::stringstream ss;
+    for (size_t i = 0; i < size; ++i) {
+        if (actual_output[i] != expected_output[i]) {
+            ss << "Expected:" << expected_output[i] << ", actual:" << actual_output[i] << " at place:" << i << std::endl;
+            break;
+        }
+    }
+    return ss.str();
+}
+
+template <typename T>
 void checkIncrement4DimResponse(const std::string outputName,
-    const std::vector<float>& expectedData,
+    const std::vector<T>& expectedData,
     tensorflow::serving::PredictRequest& request,
     tensorflow::serving::PredictResponse& response,
-    const std::vector<size_t>& expectedShape);
+    const std::vector<size_t>& expectedShape) {
+    ASSERT_EQ(response.outputs().count(outputName), 1) << "Did not find:" << outputName;
+    const auto& output_proto = response.outputs().at(outputName);
+
+    auto elementsCount = std::accumulate(expectedShape.begin(), expectedShape.end(), 1, std::multiplies<size_t>());
+
+    ASSERT_EQ(output_proto.tensor_content().size(), elementsCount * sizeof(T));
+    ASSERT_EQ(output_proto.tensor_shape().dim_size(), expectedShape.size());
+    for (size_t i = 0; i < expectedShape.size(); i++) {
+        ASSERT_EQ(output_proto.tensor_shape().dim(i).size(), expectedShape[i]);
+    }
+
+    T* actual_output = (T*)output_proto.tensor_content().data();
+    T* expected_output = (T*)expectedData.data();
+    const int dataLengthToCheck = elementsCount * sizeof(T);
+    EXPECT_EQ(0, std::memcmp(actual_output, expected_output, dataLengthToCheck))
+        << readableError(expected_output, actual_output, dataLengthToCheck / sizeof(T));
+}
 
 void checkIncrement4DimShape(const std::string outputName,
     tensorflow::serving::PredictResponse& response,
@@ -210,17 +241,6 @@ static std::vector<google::protobuf::int32> asVector(google::protobuf::RepeatedF
     std::vector<google::protobuf::int32> result(container->size(), 0);
     std::memcpy(result.data(), container->mutable_data(), result.size() * sizeof(google::protobuf::int32));
     return result;
-}
-
-static std::string readableError(const float* expected_output, const float* actual_output, const size_t size) {
-    std::stringstream ss;
-    for (size_t i = 0; i < size; ++i) {
-        if (actual_output[i] != expected_output[i]) {
-            ss << "Expected:" << expected_output[i] << ", actual:" << actual_output[i] << " at place:" << i << std::endl;
-            break;
-        }
-    }
-    return ss.str();
 }
 
 // returns path to a file.
