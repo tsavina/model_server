@@ -40,6 +40,7 @@
 using inputs_info_t = std::map<std::string, std::tuple<ovms::shape_t, tensorflow::DataType>>;
 
 const std::string dummy_model_location = std::filesystem::current_path().u8string() + "/src/test/dummy";
+const std::string dummy_fp64_model_location = std::filesystem::current_path().u8string() + "/src/test/dummy_fp64";
 const std::string sum_model_location = std::filesystem::current_path().u8string() + "/src/test/add_two_inputs_model";
 const std::string increment_1x3x4x5_model_location = std::filesystem::current_path().u8string() + "/src/test/increment_1x3x4x5";
 
@@ -56,6 +57,21 @@ const ovms::ModelConfig DUMMY_MODEL_CONFIG{
     "",                    // cache directory
     1,                     // model_version unused since version are read from path
     dummy_model_location,  // local path
+};
+
+const ovms::ModelConfig DUMMY_F64_MODEL_CONFIG{
+    "dummy_fp64",
+    dummy_fp64_model_location,  // base path
+    "CPU",                      // target device
+    "1",                        // batchsize
+    1,                          // NIREQ
+    false,                      // is stateful
+    true,                       // idle sequence cleanup enabled
+    false,                      // low latency transformation enabled
+    500,                        // steteful sequence max number
+    "",                         // cache directory
+    1,                          // model_version unused since version are read from path
+    dummy_fp64_model_location,  // local path
 };
 
 const ovms::ModelConfig SUM_MODEL_CONFIG{
@@ -94,6 +110,9 @@ constexpr const int DUMMY_MODEL_INPUT_SIZE = 10;
 constexpr const int DUMMY_MODEL_OUTPUT_SIZE = 10;
 constexpr const float DUMMY_ADDITION_VALUE = 1.0;
 const std::vector<size_t> DUMMY_MODEL_SHAPE{1, 10};
+
+constexpr const char* DUMMY_FP64_MODEL_INPUT_NAME = "input:0";
+constexpr const char* DUMMY_FP64_MODEL_OUTPUT_NAME = "output:0";
 
 constexpr const char* SUM_MODEL_INPUT_NAME_1 = "input1";
 constexpr const char* SUM_MODEL_INPUT_NAME_2 = "input2";

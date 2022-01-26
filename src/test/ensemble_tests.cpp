@@ -1886,25 +1886,20 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionShapesNotMatchBetweenDLModelTensorsVa
     ASSERT_EQ(pipelineDefinition->validateNodes(manager), StatusCode::INVALID_SHAPE);
 }
 
-// Disabled until CVS-36446 is done.
-TEST_F(EnsembleFlowTest, DISABLED_PipelineDefinitionPrecisionsNotMatchBetweenDLModelTensorsValidation) {
+TEST_F(EnsembleFlowTest, PipelineDefinitionPrecisionsNotMatchBetweenDLModelTensorsValidation) {
     ConstructorEnabledModelManager manager;
     ModelConfig dummy_fp32 = config;
-    ModelConfig dummy_u8 = config;
-    dummy_fp32.setName("dummy_fp32");
-    dummy_u8.setName("dummy_u8");
-    // Set precision of dummy_FP32 to FP32
-    // Set precision of dummy_U8 to U8
+    ModelConfig dummy_fp64 = DUMMY_F64_MODEL_CONFIG;
     ASSERT_EQ(manager.reloadModelWithVersions(dummy_fp32), StatusCode::OK_RELOADED);
-    ASSERT_EQ(manager.reloadModelWithVersions(dummy_u8), StatusCode::OK_RELOADED);
+    ASSERT_EQ(manager.reloadModelWithVersions(dummy_fp64), StatusCode::OK_RELOADED);
 
     PipelineFactory factory;
 
     // Simulate reading from pipeline_config.json
     std::vector<NodeInfo> info{
         {NodeKind::ENTRY, ENTRY_NODE_NAME, "", std::nullopt, {{customPipelineInputName, customPipelineInputName}}},
-        {NodeKind::DL, "dummy_node_fp32", "dummy_fp32", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
-        {NodeKind::DL, "dummy_node_u8", "dummy_u8", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
+        {NodeKind::DL, "dummy_node_fp32", "dummy", std::nullopt, {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_OUTPUT_NAME}}},
+        {NodeKind::DL, "dummy_node_fp64", "dummy_fp64", std::nullopt, {{DUMMY_FP64_MODEL_OUTPUT_NAME, DUMMY_FP64_MODEL_OUTPUT_NAME}}},
         {NodeKind::EXIT, EXIT_NODE_NAME},
     };
 
@@ -1913,11 +1908,11 @@ TEST_F(EnsembleFlowTest, DISABLED_PipelineDefinitionPrecisionsNotMatchBetweenDLM
     connections["dummy_node_fp32"] = {
         {ENTRY_NODE_NAME, {{customPipelineInputName, DUMMY_MODEL_INPUT_NAME}}}};
 
-    connections["dummy_node_u8"] = {
-        {"dummy_node_fp32", {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_MODEL_INPUT_NAME}}}};
+    connections["dummy_node_fp64"] = {
+        {"dummy_node_fp32", {{DUMMY_MODEL_OUTPUT_NAME, DUMMY_FP64_MODEL_INPUT_NAME}}}};
 
     connections[EXIT_NODE_NAME] = {
-        {"dummy_node_u8", {{DUMMY_MODEL_OUTPUT_NAME, customPipelineOutputName}}}};
+        {"dummy_node_fp64", {{DUMMY_FP64_MODEL_OUTPUT_NAME, customPipelineOutputName}}}};
 
     // Create pipeline definition
     std::unique_ptr<PipelineDefinition> pipelineDefinition = std::make_unique<PipelineDefinition>("my_new_pipeline", info, connections);
