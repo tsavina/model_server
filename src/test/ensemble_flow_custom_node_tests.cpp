@@ -4905,7 +4905,13 @@ TEST_F(EnsembleFlowCustomNodePipelineExecutionTest, DemultiplexerConnectedToNhwc
     checkIncrement4DimResponse<float>(pipelineOutputName, {3.0, 6.0, 4.0, 7.0, 5.0, 8.0, 4.0, 7.0, 5.0, 8.0, 6.0, 9.0, 5.0, 8.0, 6.0, 9.0, 7.0, 10.0}, request, response, {3, 1, 3, 1, 2});
 }
 
-TEST_F(EnsembleFlowCustomNodePipelineExecutionTest, DemultiplexerCreatesSharedFP64TensorsFromCustomNode) {
+TEST_F(EnsembleFlowCustomNodePipelineExecutionTest, DemultiplexerCreatesShardedFP64TensorsFromCustomNode) {
+    /*
+        Description:
+
+        Entry (1x3x1x2, fp32) ----------> (1x3x1x2, fp32) CustomNode (3x1x3x1x2, fp64) --- demultiplexer -------> (1x3x1x2, fp64) 3x ModelNode (1x3x1x2, fp64) ----- gather -----> (3x1x3x1x2, fp64) Exit
+    */
+
     // Prepare request
     const std::vector<float> inputValues{1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
     PredictRequest request;
@@ -4920,7 +4926,7 @@ TEST_F(EnsembleFlowCustomNodePipelineExecutionTest, DemultiplexerCreatesSharedFP
 
     // Prepare model
     ConstructorEnabledModelManager manager;
-    ModelConfig config = DUMMY_F64_MODEL_CONFIG;  // TODO: Change F64 to FP64
+    ModelConfig config = DUMMY_FP64_MODEL_CONFIG;
     config.setBatchingParams("0");
     ASSERT_EQ(config.parseShapeParameter("(1,1,2,3)"), ovms::StatusCode::OK);
     ASSERT_EQ(manager.reloadModelWithVersions(config), ovms::StatusCode::OK_RELOADED);
@@ -4961,7 +4967,13 @@ TEST_F(EnsembleFlowCustomNodePipelineExecutionTest, DemultiplexerCreatesSharedFP
     checkIncrement4DimResponse<double>(pipelineOutputName, {3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0}, request, response, {3, 1, 1, 2, 3});
 }
 
-TEST_F(EnsembleFlowCustomNodePipelineExecutionTest, DemultiplexerCreatesSharedFP64TensorsFromEntryNode) {  // TODO: Custom Node?
+TEST_F(EnsembleFlowCustomNodePipelineExecutionTest, DemultiplexerCreatesShardedFP64TensorsFromEntryNode) {
+    /*
+        Description:
+
+        Entry (2x1x2x1x2, fp64) --- demultiplexer --------> (1x2x1x2, fp64) 2x ModelNode (1x2x1x2, fp64) -------> (1x2x1x2, fp64) 2x ModelNode (1x2x1x2, fp64) ----- gather -----> (2x1x2x1x2, fp64) Exit
+    */
+
     // Prepare request
     const std::vector<double> inputValues{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
     PredictRequest request;
@@ -4977,7 +4989,7 @@ TEST_F(EnsembleFlowCustomNodePipelineExecutionTest, DemultiplexerCreatesSharedFP
 
     // Prepare model
     ConstructorEnabledModelManager manager;
-    ModelConfig config = DUMMY_F64_MODEL_CONFIG;  // TODO: Change F64 to FP64
+    ModelConfig config = DUMMY_FP64_MODEL_CONFIG;  // TODO: Change F64 to FP64
     config.setBatchingParams("0");
     ASSERT_EQ(config.parseShapeParameter("(1,2,1,2)"), ovms::StatusCode::OK);
     ASSERT_EQ(manager.reloadModelWithVersions(config), ovms::StatusCode::OK_RELOADED);

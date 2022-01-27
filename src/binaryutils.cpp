@@ -319,7 +319,6 @@ ov::runtime::Tensor convertMatsToTensor(std::vector<cv::Mat>& images, const std:
     case ovms::Precision::FP32:
     case ovms::Precision::I32:
     case ovms::Precision::FP64:
-    case ovms::Precision::I64:
     case ovms::Precision::I8:
     case ovms::Precision::U8:
     case ovms::Precision::FP16:

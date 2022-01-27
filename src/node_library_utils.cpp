@@ -48,7 +48,6 @@ CustomNodeTensorPrecision toCustomNodeTensorPrecision(ov::element::Type_t precis
 }
 
 Precision toInferenceEnginePrecision(CustomNodeTensorPrecision precision) {
-    // TODO should we add new precisions now into CN header?
     static std::unordered_map<CustomNodeTensorPrecision, Precision> precisionMap{
         {CustomNodeTensorPrecision::FP32, Precision::FP32},
         {CustomNodeTensorPrecision::FP64, Precision::FP64},

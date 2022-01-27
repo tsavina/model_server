@@ -1889,7 +1889,7 @@ TEST_F(EnsembleFlowTest, PipelineDefinitionShapesNotMatchBetweenDLModelTensorsVa
 TEST_F(EnsembleFlowTest, PipelineDefinitionPrecisionsNotMatchBetweenDLModelTensorsValidation) {
     ConstructorEnabledModelManager manager;
     ModelConfig dummy_fp32 = config;
-    ModelConfig dummy_fp64 = DUMMY_F64_MODEL_CONFIG;
+    ModelConfig dummy_fp64 = DUMMY_FP64_MODEL_CONFIG;
     ASSERT_EQ(manager.reloadModelWithVersions(dummy_fp32), StatusCode::OK_RELOADED);
     ASSERT_EQ(manager.reloadModelWithVersions(dummy_fp64), StatusCode::OK_RELOADED);
 

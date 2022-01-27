@@ -1075,7 +1075,7 @@ TEST_F(TestPredict, PerformInferenceDummyBatchSizeAny) {
 TEST_F(TestPredict, PerformInferenceDummyFp32) {
     using namespace ovms;
 
-    ModelConfig config = DUMMY_F64_MODEL_CONFIG;
+    ModelConfig config = DUMMY_FP64_MODEL_CONFIG;
     config.setBatchingParams("3");
     ASSERT_EQ(manager.reloadModelWithVersions(config), ovms::StatusCode::OK_RELOADED);
 

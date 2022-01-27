@@ -60,7 +60,7 @@ const ovms::ModelConfig DUMMY_MODEL_CONFIG{
     dummy_model_location,  // local path
 };
 
-const ovms::ModelConfig DUMMY_F64_MODEL_CONFIG{
+const ovms::ModelConfig DUMMY_FP64_MODEL_CONFIG{
     "dummy_fp64",
     dummy_fp64_model_location,  // base path
     "CPU",                      // target device

@@ -380,6 +380,7 @@ TEST_P(BinaryUtilsValidPrecisionTest, Valid) {
     ASSERT_EQ(convertStringValToTensor(stringVal, tensor, tensorInfo, false), ovms::StatusCode::OK);
     ASSERT_EQ(tensor.get_shape(), (ov::Shape{1, 1, 1, 3}));
     ASSERT_EQ(tensor.get_size(), 3);
+    ASSERT_EQ(tensor.get_element_type(), ovmsPrecisionToIE2Precision(testedPrecision));
 }
 
 TEST_P(BinaryUtilsInvalidPrecisionTest, Invalid) {
