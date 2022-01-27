@@ -104,7 +104,8 @@ Status EntryNode::createShardedTensor(ov::runtime::Tensor& dividedTensor, Precis
     // and reuse memory from original tensor since its memory is kept for whole duration of predict request
     if ((precision == Precision::FP32) ||
         (precision == Precision::I32) ||
-        // TODO FP64/I64
+        (precision == Precision::FP64) ||
+        (precision == Precision::I64) ||
         (precision == Precision::I8) ||
         (precision == Precision::U8) ||
         (precision == Precision::I16)) {
