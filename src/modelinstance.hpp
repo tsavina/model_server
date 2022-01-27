@@ -299,6 +299,8 @@ private:
       */
     bool isCustomLoaderConfigChanged;
 
+    const Layout getReportedTensorLayout(const ModelConfig& config, const std::string& name, bool isInput);
+
 public:
     /**
          * @brief A default constructor

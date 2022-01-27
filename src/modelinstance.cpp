@@ -141,7 +141,7 @@ Status validateConfigurationAgainstNetwork(const ModelConfig& config, std::share
     return StatusCode::OK;
 }
 
-const Layout getReportedTensorLayout(const ModelConfig& config, const std::string& name, bool isInput) {
+const Layout ModelInstance::getReportedTensorLayout(const ModelConfig& config, const std::string& name, bool isInput) {
     auto layout = TensorInfo::getDefaultLayout();
     if (isInput && config.getLayout().isSet()) {
         layout = config.getLayout().getTensorLayout();
@@ -359,7 +359,7 @@ Status ModelInstance::loadInputTensors(const ModelConfig& config, const DynamicM
             ovms::Precision precision = ovElementTypeToOvmsPrecision(input.get_element_type());
             Shape shape(input.get_partial_shape());
             std::string mappingName = config.getMappingInputByKey(name);
-            const Layout layout = getReportedTensorLayout(config, name, true);
+            const Layout layout = this->getReportedTensorLayout(config, name, true);
 
             std::shared_ptr<TensorInfo> info = std::make_shared<TensorInfo>(
                 name,
@@ -405,7 +405,7 @@ Status ModelInstance::loadOutputTensors(const ModelConfig& config) {
             ovms::Precision precision = ovElementTypeToOvmsPrecision(output.get_element_type());
             Shape shape(output.get_partial_shape());
             std::string mappingName = config.getMappingOutputByKey(name);
-            const Layout layout = getReportedTensorLayout(config, name, false);
+            const Layout layout = this->getReportedTensorLayout(config, name, false);
 
             std::shared_ptr<TensorInfo> info = std::make_shared<TensorInfo>(
                 name,
@@ -665,6 +665,18 @@ Status ModelInstance::loadOVCompiledModel(const ModelConfig& config) {
             continue;
         }
         SPDLOG_LOGGER_DEBUG(modelmanager_logger, "Model: {}; version: {}; target device: {}, CompiledModel config key: {}, value: {}", getName(), getVersion(), targetDevice, key, value);
+    }
+    if (this->compiledModel != nullptr && this->compiledModel->inputs().size() > 0) {
+        for(auto input : this->compiledModel->inputs()){
+            auto rtInfo = input.get_rt_info();
+            if(input.get_any_name() == "input:0"){
+                auto it = rtInfo.find("layout_0");
+                if(rtInfo.end() != it) {
+                    auto layout = it->second.as<ov::LayoutAttribute>().to_string();
+                    SPDLOG_LOGGER_ERROR(modelmanager_logger, "LAYOUT: {}", layout);
+                }
+            }
+        }
     }
     return StatusCode::OK;
 }
