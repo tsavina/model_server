@@ -115,7 +115,7 @@ Status EntryNode::createShardedTensor(ov::runtime::Tensor& dividedTensor, Precis
 }
 
 const Status EntryNode::validate() {
-    static const std::set<const char*> optionalInputNames = {};
+    static const std::set<std::string> optionalInputNames = {};
     return request_validation_utils::validate(
         *request,
         inputsInfo,
