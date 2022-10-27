@@ -1,26 +1,27 @@
 # Quickstart Guide {#ovms_docs_quick_start_guide}
 
 OpenVINO Model Server can perform inference using pre-trained models in either [OpenVINO IR](https://docs.openvino.ai/2022.2/openvino_docs_MO_DG_IR_and_opsets.html#doxid-openvino-docs-m-o-d-g-i-r-and-opsets) 
-or [ONNX](https://onnx.ai/) format. You can get them by:
+or [ONNX](https://onnx.ai/) and [PaddlePaddle](https://github.com/PaddlePaddle/Paddle) format. You can get them by:
 
-- downloading proper models from [Open Model Zoo](https://storage.openvinotoolkit.org/repositories/open_model_zoo/public/2022.1/)
+- downloading models from [Open Model Zoo](https://storage.openvinotoolkit.org/repositories/open_model_zoo/public/2022.1/)
 - converting other formats using [Model Optimizer](https://docs.openvino.ai/2022.2/openvino_docs_MO_DG_Deep_Learning_Model_Optimizer_DevGuide.html)
 
 To quickly start using OpenVINO™ Model Server follow these steps:
-1. Prepare Docker
-2. Download or build the OpenVINO™ Model server
-3. Provide a model
-4. Start the Model Server Container
-5. Prepare the Example Client Components
-6. Download data for inference
-7. Run inference
-8. Review the results
+1. Prepare Docker.
+2. Download or build the OpenVINO™ Model server.
+3. Provide a model.
+4. Start the Model Server Container.
+5. Prepare the Example Client Components.
+6. Download data for inference.
+7. Run inference.
+8. Review the results.
 
+docker run -d -u $(id -u):$(id -g) -v $(pwd)/model:/models/face-detection -p 9000:9000 openvino/model_server:latest \ --model_path /models/face-detection --model_name face-detection --port 9000 --plugin_config '{"CPU_THROUGHPUT_STREAMS": "1"}' --shape auto
 
 ### Step 1: Prepare Docker
 
 [Install Docker Engine](https://docs.docker.com/engine/install/), including its [post-installation steps](https://docs.docker.com/engine/install/linux-postinstall/), on your development system. 
-If you are not sure if it has already been installed, test it using the following command. If it displays a test image and a message, it is ready.
+If you are not sure if it is already installed, test it using the following command. If it displays a test image and a message, it is ready.
 
 ``` bash
 $ docker run hello-world
@@ -28,16 +29,10 @@ $ docker run hello-world
 
 ### Step 2: Download or Build the OpenVINO Model Server
 
-Download the Docker image that contains OpenVINO Model Server available through DockerHub:
+Download the Docker image that contains OpenVINO Model Server:
 
 ```bash
 docker pull openvino/model_server:latest
-```
-
-or build the openvino/model_server:latest docker image, using:
-
-```
-make docker_build
 ```
 
 ### Step 3: Provide a model
@@ -48,16 +43,23 @@ Store components of the downloaded or converted model in the `model/1` directory
 curl --create-dirs https://storage.openvinotoolkit.org/repositories/open_model_zoo/2022.1/models_bin/2/face-detection-retail-0004/FP32/face-detection-retail-0004.xml https://storage.openvinotoolkit.org/repositories/open_model_zoo/2022.1/models_bin/2/face-detection-retail-0004/FP32/face-detection-retail-0004.bin -o model/1/face-detection-retail-0004.xml -o model/1/face-detection-retail-0004.bin
 ```
 
-**Note:** For ONNX models additional steps are required. For a detailed description refer to our [ONNX format example](../demos/using_onnx_model/python/README.md).
+> **NOTE**: For ONNX models additional steps are required. For a detailed description refer to our [ONNX format example](../demos/using_onnx_model/python/README.md).
 
+docker run -d -u $(id -u):$(id -g) -v $(pwd)/models/yolo -p 9000:9000 openvino/model_server:latest \
+--model_path /models/yolo --model_name yolo --port 9000 --plugin_config '{"CPU_THROUGHPUT_STREAMS": "1"}' --shape auto
+
+wsl docker run -p 9000:9000 openvino/model_server:latest  --model_name resnet --model_path gs://ovms-public-eu/resnet50-binary  --layout NHWC:NCHW --port 9000
+
+# start the container
+docker run -p 9000:9000 openvino/model_server:latest --model_name resnet --model_path  C:\Users\tsavina\models\resnet\1  --port 9000
 
 ### Step 4: Start the Model Server Container
 
 Start the Model Server container:
 
 ```bash
-docker run -d -u $(id -u):$(id -g) -v $(pwd)/model:/models/face-detection -p 9000:9000 openvino/model_server:latest \
---model_path /models/face-detection --model_name face-detection --port 9000 --plugin_config '{"CPU_THROUGHPUT_STREAMS": "1"}' --shape auto
+docker run -d -u $(id -u):$(id -g) -v $(pwd)/model/1 -p 9000:9000 openvino/model_server:latest \
+--model_path /model/1 --model_name yolo --port 9000 --plugin_config '{"CPU_THROUGHPUT_STREAMS": "1"}' --shape auto
 ```
 
 OpenVINO Model Server expects a particular folder structure for models - in this case `model` directory should have following content: 
