@@ -23,11 +23,6 @@ Learn how to [prepare your model for serving](models_repository.md).
 [Using Docker](docker_container.md) is the recommended way of running OpenVINO Model Server. The images are available via 
 [DockerHub](https://hub.docker.com/r/openvino/model_server) and [RedHat Ecosystem Catalog](https://catalog.redhat.com/software/containers/intel/openvino-model-server/607833052937385fc98515de). 
 
-## Running on Bare Metal and Virtual Machine Hosts
-
-OpenVINO Model Server is an open-source project written in C++. You can download and compile the code to obtain the binary and [run it on bare metal](host.md).
-The `make` targets are provided to simplify the process.
-
 ## Serving Models
 
 [Serving a single model](single_model_mode.md) is the simplest way to deploy OpenVINO™ Model Server. Only one model is served and the whole configuration is passed via CLI parameters.
