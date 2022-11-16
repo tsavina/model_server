@@ -45,7 +45,7 @@ The models also can be hosted remotely by cloud storages, including Google Cloud
 
 ## Serving Models 
 
-## Serving Single Model
+### Serving Single Model
 
 Before starting the container, make sure you [prepared the model for serving](models_repository.md).
 
@@ -68,10 +68,8 @@ docker run -d --rm -v ${PWD}/models:/models -p 9000:9000 -p 9001:9001 openvino/m
 ```
 
 @sphinxdirective
-
 .. raw:: html
     <div class="collapsible-section" data-title="Configuration Arguments for Running Model Server: Click to expand/collapse">
-
 @endsphinxdirective
 
 
@@ -109,7 +107,7 @@ docker run -d --rm -v ${PWD}/models:/models -p 9000:9000 -p 9001:9001 openvino/m
 - In the command above, port 9000 is exposed for gRPC and port 9001 is exposed for REST API calls.
 - Add model_name for the client gRPC/REST API calls.
 
-## Serving Multiple Models 
+### Serving Multiple Models 
 
 To use a container with several models, you need an additional JSON configuration file defining each model. In the file, provide a 
 `model_config_list` array that includes a collection of config objects for each served model. The `name` and the `base_path` values of the model are required for every config object.
@@ -118,7 +116,6 @@ To use a container with several models, you need an additional JSON configuratio
 .. raw:: html
     <div class="collapsible-section" data-title="An example of the configuration file: Click to expand/collapse">
 @endsphinxdirective
-
 
 ```json
 {
@@ -185,7 +182,7 @@ docker run --rm -d -v /models/:/opt/ml:ro -p 9001:9001 -p 8001:8001 -v <config.j
 
 ```
 
-## Setting Input and Output Tensors
+### Setting Input and Output Tensors
 
 Each model defines input and output tensors in the model graph. The client passes data to model input tensors by filling appropriate entries in the request input map. 
 Prediction results can be read from the response output map. By default, OpenVINO™ Model Server uses model tensor names as input and output names in 

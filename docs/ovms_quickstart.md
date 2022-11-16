@@ -80,8 +80,8 @@ curl --fail https://raw.githubusercontent.com/openvinotoolkit/model_server/relea
 
 For more information, check these links:
 
-- [Information on the face detection script](../demos/face_detection/python/README.md). 
-- [More Model Server client scripts](../demos/README.md).
+- [Information on the face detection script](../demos/face_detection/python/README.md)
+- [More Model Server client scripts](../demos/README.md)
 
 ### Step 6. Download Data for Inference
 
