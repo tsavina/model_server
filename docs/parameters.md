@@ -1,7 +1,8 @@
 # Model Server Parameters {#ovms_docs_parameters}
 
-
 ## Model Configuration Options
+
+Configuration options for the models are defined in an additional JSON configuration file and determine configuration for each model. 
 
 | Option  | Value format | Description |
 |---|---|---|
@@ -39,24 +40,3 @@ Configuration options for the server are defined only via command-line options a
 | `log_path` | `string` | Optional path to the log file. |
 | `cache_dir` | `string` | Path to the model cache storage. Caching will be enabled if this parameter is defined or the default path /opt/cache exists |
 
-
-### Configuration Arguments for Running Model Server
-
-@sphinxdirective
-+--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
-| `--rm`                         | | remove the container when exiting the Docker container                                                                        |
-+--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
-| `-d`                           | | runs the container in the background                                                                                          |
-+--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
-| `-v`                           | | defines how to mount the model folder in the Docker container                                                                 |
-+--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
-| `-p`                           | | exposes the model serving port outside the Docker container                                                                   |
-+--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
-| `openvino/model_server:latest` | | represents the image name; the ovms binary is the Docker entry point                                                          |
-|                                | | varies by tag and build process - see tags: https://hub.docker.com/r/openvino/model_server/tags/ for a full tag list.         |
-+--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
-                                                                                    |
-+--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
-                                                                                               |
-+--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
-@endsphinxdirective

@@ -5,9 +5,9 @@
 .. toctree::
    :maxdepth: 1
    :hidden:
-
-   ovms_docs_server_api
+   
    ovms_docs_clients
+   ovms_docs_server_api
 
 @endsphinxdirective
 
