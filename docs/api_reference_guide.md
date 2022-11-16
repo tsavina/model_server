@@ -22,4 +22,4 @@ OpenVINO&trade; Model Server exposes two sets of APIs: one compatible with Tenso
 - [TensorFlow Serving REST API](./model_server_rest_api_tfs.md)
 - [KServe REST API](./model_server_rest_api_kfs.md)
 
-If you already use one of these APIs, integration of OpenVINO Model Server should be smooth and transparent.
+If you already use one of these APIs, integration of OpenVINO Model Server should be smooth and transparent

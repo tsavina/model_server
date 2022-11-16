@@ -1,4 +1,4 @@
-# Serving Models 
+# Serving Models {#ovms_docs_serving_model}
 
 ## Serving Single Model
 
@@ -22,36 +22,30 @@ docker run -d --rm -v ${PWD}/models:/models -p 9000:9000 -p 9001:9001 openvino/m
 --model_path /models/resnet/ --model_name resnet --port 9000 --rest_port 9001 --log_level DEBUG
 ```
 
-@sphinxdirective
-
-.. raw:: html
-    <div class="collapsible-section" data-title="Configuration Arguments for Running Model Server: Click to expand/collapse">
-
-   +--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
-   | `--rm`                         | | remove the container when exiting the Docker container                                                                        |
-   +--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
-   | `-d`                           | | runs the container in the background                                                                                          |
-   +--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
-   | `-v`                           | | defines how to mount the model folder in the Docker container                                                                 |
-   +--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
-   | `-p`                           | | exposes the model serving port outside the Docker container                                                                   |
-   +--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
-   | `openvino/model_server:latest` | | represents the image name; the ovms binary is the Docker entry point                                                          |
-   |                                | | varies by tag and build process - see tags: https://hub.docker.com/r/openvino/model_server/tags/ for a full tag list.         |
-   +--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
-   | `--model_path`                 | | model location, which can be:                                                                                                 |
-   |                                | | a Docker container path that is mounted during start-up                                                                       |
-   |                                | | a Google Cloud Storage path `gs://<bucket>/<model_path>`                                                                      |
-   |                                | | an AWS S3 path `s3://<bucket>/<model_path>`                                                                                   |
-   |                                | | an Azure blob path `az://<container>/<model_path>`                                                                            |
-   +--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
-   | `--model_name`                 | | the name of the model in the model_path                                                                                       |
-   +--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
-   | `--port`                       | | the gRPC server port                                                                                                          |
-   +--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
-   | `--rest_port`                  | | the REST server port                                                                                                          |
-   +--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
-@endsphinxdirective
++--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
+| `--rm`                         | | remove the container when exiting the Docker container                                                                        |
++--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
+| `-d`                           | | runs the container in the background                                                                                          |
++--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
+| `-v`                           | | defines how to mount the model folder in the Docker container                                                                 |
++--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
+| `-p`                           | | exposes the model serving port outside the Docker container                                                                   |
++--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
+| `openvino/model_server:latest` | | represents the image name; the ovms binary is the Docker entry point                                                          |
+|                                | | varies by tag and build process - see tags: https://hub.docker.com/r/openvino/model_server/tags/ for a full tag list.         |
++--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
+| `--model_path`                 | | model location, which can be:                                                                                                 |
+|                                | | a Docker container path that is mounted during start-up                                                                       |
+|                                | | a Google Cloud Storage path `gs://<bucket>/<model_path>`                                                                      |
+|                                | | an AWS S3 path `s3://<bucket>/<model_path>`                                                                                   |
+|                                | | an Azure blob path `az://<container>/<model_path>`                                                                            |
++--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
+| `--model_name`                 | | the name of the model in the model_path                                                                                       |
++--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
+| `--port`                       | | the gRPC server port                                                                                                          |
++--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
+| `--rest_port`                  | | the REST server port                                                                                                          |
++--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
 
 
 - Publish the container's port to your host's **open ports**. 
@@ -62,11 +56,6 @@ docker run -d --rm -v ${PWD}/models:/models -p 9000:9000 -p 9001:9001 openvino/m
 
 To use a container with several models, you need an additional JSON configuration file defining each model. In the file, provide a 
 `model_config_list` array that includes a collection of config objects for each served model. The `name` and the `base_path` values of the model are required for every config object.
-
-@sphinxdirective
-
-.. raw:: html
-    <div class="collapsible-section" data-title="An example of the configuration file: Click to expand/collapse">
 
 
 ```json
@@ -118,8 +107,6 @@ To use a container with several models, you need an additional JSON configuratio
    ]
 }
 ```
-
-@endsphinxdirective
 
 When the Docker container has the config file mounted, it can be started - the command is minimalistic, as arguments are read from the config file. 
 Note that models with a cloud storage path require setting specific environmental variables.
