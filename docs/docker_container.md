@@ -1,53 +1,62 @@
-# Model Server in Docker Containers {#ovms_docs_docker_container}
+# Deploying Model Server in Docker Container {#ovms_docs_docker_container}
 
-This is a step-by-step guide on how to deploy OpenVINO&trade; Model Server on Linux, using a Docker Container. Links are provided for different compatible hardware. 
+OpenVINO Model Server is hosted inside a docker container. Depending on your requirements, you can choose one of methods: either download a pre-build container or build a container from source, if you want to have full control of the container. 
+
+* <a href="#prebuild-container">Use Pre-build Model Server Container</a> or
+* <a href="#model-server-installation">Build Container from Source</a>
+
+Model Server is also suitable for landing in the [Kubernetes environment](installations_kubernetes.md).
+
+## Use Pre-build Model Server Container <a name="prebuild-container"></a>
+
+This is a step-by-step guide on how to deploy OpenVINO&trade; Model Server on Linux, using a pre-build Docker Container. 
 
 **Before you start, make sure you have:**
 
-- [Docker Engine](https://docs.docker.com/engine/) installed ([How to Install Docker Engine](https://docs.docker.com/engine/install/))
+- [Docker Engine](https://docs.docker.com/engine/) installed 
 - Intel® Core™ processor (6-12th gen.) or Intel® Xeon® processor
-- (optional) AI accelerators [supported by OpenVINO](https://docs.openvino.ai/2022.2/openvino_docs_IE_DG_supported_plugins_Supported_Devices.html)
 - Linux, macOS or Windows via [WSL](https://docs.microsoft.com/en-us/windows/wsl/) 
+- (optional) AI accelerators [supported by OpenVINO](https://docs.openvino.ai/2022.2/openvino_docs_IE_DG_supported_plugins_Supported_Devices.html)
 
-**NOTE:** accelerators are only tested on bare-metal Linux hosts.
+> **NOTE**: Accelerators are tested only on bare-metal Linux hosts.
 
+### Launch Model Server Container <a name="quickstart"></a>
 
-## Starting with a container <a name="quickstart"></a>
+This example shows how to launch the model server with a ResNet50 image classification model from a cloud storage:
 
-- Pull OpenVINO&trade; Model Server Image.
-- Start a Docker Container with OVMS and your chosen model from cloud storage.
-- Provide the input files, (arrange an input Dataset).
-- Prepare a client package.
-- Run the prediction using ovmsclient.
+#### Step 1. Pull Model Server Image
 
-Here is an example of this process using a ResNet50 model for image classification:
-
-Pull an image from Docker or [RedHat Ecosystem Catalog](https://catalog.redhat.com/software/containers/intel/openvino-model-server/607833052937385fc98515de)
+Pull an image from Docker: 
 
 ```bash
 docker pull openvino/model_server:latest
 ```
-or, alternatively 
+
+or [RedHat Ecosystem Catalog](https://catalog.redhat.com/software/containers/intel/openvino-model-server/607833052937385fc98515de):
+
 ```
 docker pull registry.connect.redhat.com/intel/openvino-model-server:latest
 ```
 
-Start the container
+#### Step 2. Prepare Data for Serving
+
 ```bash
-# start the container 
+# start the container with the model
 docker run -p 9000:9000 openvino/model_server:latest \ 
 --model_name resnet --model_path gs://ovms-public-eu/resnet50-binary \ 
 --layout NHWC:NCHW --port 9000 
 
-# download input files, an image, and a label mapping file
+# download input files: an image and a label mapping file
 wget https://raw.githubusercontent.com/openvinotoolkit/model_server/releases/2022/1/demos/common/static/images/zebra.jpeg
 wget https://raw.githubusercontent.com/openvinotoolkit/model_server/releases/2022/1/demos/common/python/classes.py
 
-# Install the Python-based ovmsclient package
+# install the Python-based ovmsclient package
 pip3 install ovmsclient
 ```
 
-Run prediction
+#### Step 3. Run Prediction
+
+
 ```bash
 echo 'import numpy as np
 from classes import imagenet_classes
@@ -63,16 +72,36 @@ result_index = np.argmax(output[0])
 print(imagenet_classes[result_index])' >> predict.py
 
 python predict.py
-zebra
 ```
+If everything is set up correctly, you will see 'zebra' prediction in the output.
 
-To learn how to set up OpenVINO Model Server, refer to the [Quick Start guide](./ovms_quickstart.md).
+## Build Container from Source <a name="model-server-installation"></a> 
 
+Before starting the server, make sure your hardware is [supported](https://docs.openvino.ai/2022.2/_docs_IE_DG_supported_plugins_Supported_Devices.html) by OpenVINO.
 
+> **NOTE**: OpenVINO Model Server execution on baremetal is tested on Ubuntu 20.04.x. For other operating systems, starting model server in a [docker container](./docker_container.md) is recommended.
+   
+1. Clone model server git repository.
+2. Navigate to the model server directory.
+3. Use a precompiled binary or build it in a Docker container.
+4. Navigate to the folder containing the binary package and unpack the `tar.gz` file.
 
-## Building an OpenVINO&trade; Model Server Docker Image <a name="sourcecode"></a>
+Run the following commands to build a model server Docker image:
 
-You can build your own Docker image executing the `make docker_build` command in the [git repository root folder](https://github.com/openvinotoolkit/model_server).
+```bash
+
+git clone https://github.com/openvinotoolkit/model_server.git
+
+cd model_server   
+   
+# automatically build a container from source
+# it places a copy of the binary package in the `dist` subfolder in the Model Server root directory
+make docker_build
+
+# unpack the `tar.gz` file
+cd dist/ubuntu && tar -xzvf ovms.tar.gz
+
+```
 In the `./dist` directory it will generate: 
 
 - image tagged as openvino/model_server:latest - with CPU, NCS, and HDDL support
@@ -80,71 +109,30 @@ In the `./dist` directory it will generate:
 - image tagged as openvino/model_server:latest-nginx-mtls - with CPU, NCS, and HDDL support and a reference nginx setup of mTLS integration
 - release package (.tar.gz, with ovms binary and necessary libraries)
 
-**Note:** OVMS docker image can be created with ubi8-minimal base image or the default ubuntu20. 
-Note that OVMS with the ubi base image doesn’t support NCS and HDDL accelerators.
+> **NOTE**: Model Server docker image can be created with ubi8-minimal base image or the default ubuntu20. Model Server with the ubi base image does not support NCS and HDDL accelerators.
 
-To do so, use either of these commands:
+### Running the Server
 
-Running the inference operation on GPU requires the ovms process security context account to have correct permissions.
-It has to belong to the render group identified by the command:
-```bash
-stat -c "group_name=%G group_id=%g" /dev/dri/render*
-```
-The default account in the docker image is already preconfigured. In case you change the security context, use the following command
-to start the ovms container:
-```bash
-docker run --rm -it  --device=/dev/dri --group-add=$(stat -c "%g" /dev/dri/render* | head -n 1) -u $(id -u):$(id -g) \
--p 9001:9001 openvino/model_server:latest-gpu \
---model_name resnet --model_path gs://ovms-public-eu/resnet50-binary --port 9001 --target_device GPU
-```
+The server can be started in two ways:
 
-*Note:* The public docker image includes the OpenCL drivers for GPU in version 21.38.21026.
+- using the ```./ovms/bin/ovms --help``` command in the folder, where OVMS was is installed
+- in the interactive mode - as a background process or a daemon initiated by ```systemctl/initd``` depending on the Linux distribution and specific hosting requirements
 
-### Model Server image with DG2 support (Ubuntu 20.04)
 
-Image with DG2 GPU support has not been published. To build the image yourself you need to have DG2 drivers installed on the host and NEO Runtime packages available. 
+> **NOTE**:
+> When [AI accelerators](accelerators.md)are used for inference execution, additional steps may be required to install their drivers and dependencies. 
+> Learn more in the [OpenVINO installation guide](https://docs.openvino.ai/2022.2/openvino_docs_install_guides_installing_openvino_linux.html).
 
-Put NEO Runtime packages in the catalog `<model_server_dir>/release_files/drivers/dg2` and run `make docker_build` with parameter: `INSTALL_DRIVER_VERSION=dg2`.
+### Next Steps
 
-Example:
-```
-make docker_build BASE_OS=ubuntu OVMS_CPP_DOCKER_IMAGE=ovms_dg2 INSTALL_DRIVER_VERSION=dg2
-```
+- To serve your own model, [prepare it for serving](models_repository.md) and proceed to serve [single](single_model_mode.md) or [multiple](multiple_models_mode.md) models.
+- To see another example of setting up the model server with a face-detection model, refer to the [Quickstart guide](./ovms_quickstart.md) and explore the [demos](../demos/README.md).
+- Learn more about model server [starting parameters](parameters.md).
 
-## Using Multi-Device Plugin
+### Additional Resources
 
-If you have multiple inference devices available (e.g. Myriad VPUs and CPU) you can increase inference throughput by enabling the Multi-Device Plugin. 
-With Multi-Device Plugin enabled, inference requests will be load balanced between multiple devices. 
-For more detailed information read [OpenVino's Multi-Device plugin documentation](https://docs.openvino.ai/2022.2/openvino_docs_OV_UG_Running_on_multiple_devices.html).
-
-In order to use this feature in OpenVino™ Model Server, following steps are required:
-
-Set target_device for the model in configuration json file to MULTI:DEVICE_1,DEVICE_2 (e.g. MULTI:MYRIAD,CPU, order of the devices defines their priority, so MYRIAD devices will be used first in this example)
-
-Below is exemplary config.json setting up Multi-Device Plugin for resnet model, using Intel® Movidius™ Neural Compute Stick and CPU devices:
-```
-{
-   "model_config_list": [
-   {"config": {
-      "name": "resnet",
-      "base_path": "/opt/model",
-      "batch_size": "1",
-      "target_device": "MULTI:MYRIAD,CPU"}
-   }]
-}
-```
-
-Additionally, you can use the `INSTALL_DRIVER_VERSION` argument command to choose which GPU driver version is used by the produced image. 
-If not provided, most recent version is used.
-
-Currently, the following versions are available:
-- 21.38.21026 - Redhat
-- 21.48.21782 - Ubuntu
-
-Example:
-```bash
-git clone https://github.com/openvinotoolkit/model_server.git
-cd model_server
-make docker_build INSTALL_DRIVER_VERSION=21.38.21026
-```
-If not provided, version 21.38.21026 is used for Redhat and 21.48.21782 is used for Ubuntu.
+- [Configure AI accelerators](accelerators.md)
+- [Model server parameters](parameters.md)
+- [Quickstart guide](./ovms_quickstart.md)
+- [Demos](../demos/README.md)
+- [Troubleshooting](troubleshooting.md)

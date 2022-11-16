@@ -19,7 +19,7 @@
 | `"max_sequence_number"` | `uint32` | Determines how many sequences can be handled concurrently by a model instance. |
 | `"low_latency_transformation"` | `bool` | If set to true, model server will apply [low latency transformation](https://docs.openvino.ai/2022.2/openvino_docs_IE_DG_supported_plugins_Supported_Devices.html) on model load. |
 
-## Server configuration options
+## Server Configuration Options
 
 Configuration options for the server are defined only via command-line options and determine configuration common for all served models. 
 
@@ -40,3 +40,23 @@ Configuration options for the server are defined only via command-line options a
 | `cache_dir` | `string` | Path to the model cache storage. Caching will be enabled if this parameter is defined or the default path /opt/cache exists |
 
 
+### Configuration Arguments for Running Model Server
+
+@sphinxdirective
++--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
+| `--rm`                         | | remove the container when exiting the Docker container                                                                        |
++--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
+| `-d`                           | | runs the container in the background                                                                                          |
++--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
+| `-v`                           | | defines how to mount the model folder in the Docker container                                                                 |
++--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
+| `-p`                           | | exposes the model serving port outside the Docker container                                                                   |
++--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
+| `openvino/model_server:latest` | | represents the image name; the ovms binary is the Docker entry point                                                          |
+|                                | | varies by tag and build process - see tags: https://hub.docker.com/r/openvino/model_server/tags/ for a full tag list.         |
++--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
+                                                                                    |
++--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
+                                                                                               |
++--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
+@endsphinxdirective
