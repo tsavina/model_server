@@ -22,6 +22,7 @@ docker run -d --rm -v ${PWD}/models:/models -p 9000:9000 -p 9001:9001 openvino/m
 --model_path /models/resnet/ --model_name resnet --port 9000 --rest_port 9001 --log_level DEBUG
 ```
 
+@sphinxdirective
 +--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
 | `--rm`                         | | remove the container when exiting the Docker container                                                                        |
 +--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
@@ -46,7 +47,7 @@ docker run -d --rm -v ${PWD}/models:/models -p 9000:9000 -p 9001:9001 openvino/m
 +--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
 | `--rest_port`                  | | the REST server port                                                                                                          |
 +--------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
-
+@endsphinxdirective
 
 - Publish the container's port to your host's **open ports**. 
 - In the command above, port 9000 is exposed for gRPC and port 9001 is exposed for REST API calls.

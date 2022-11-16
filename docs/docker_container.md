@@ -1,11 +1,12 @@
-# Deploying Model Server in Docker Container {#ovms_docs_docker_container}
+# Deploying Model Server {#ovms_docs_docker_container}
 
 OpenVINO Model Server is hosted inside a docker container. Depending on your requirements, you can choose one of methods: either download a pre-build container or build a container from source, if you want to have full control of the container. 
 
 * <a href="#prebuild-container">Use Pre-build Model Server Container</a> or
 * <a href="#model-server-installation">Build Container from Source</a>
 
-Model Server is also suitable for landing in the [Kubernetes environment](installations_kubernetes.md).
+
+Model Server is also suitable for landing in the * <a href="#kubernetes-installation">Kubernetes environment</a>.
 
 ## Use Pre-build Model Server Container <a name="prebuild-container"></a>
 
@@ -120,6 +121,15 @@ The server can be started in two ways:
 > **NOTE**:
 > When [AI accelerators](accelerators.md)are used for inference execution, additional steps may be required to install their drivers and dependencies. 
 > Learn more in the [OpenVINO installation guide](https://docs.openvino.ai/2022.2/openvino_docs_install_guides_installing_openvino_linux.html).
+
+# Deploy Model Server in Kubernetes <a name="kubernetes-installation"></a> 
+
+There are three recommended methods for deploying OpenVINO Model Server in Kubernetes:
+1. [helm chart](https://github.com/openvinotoolkit/operator/tree/main/helm-charts/ovms) - deploys Model Server instances using the [helm](https://helm.sh) package manager for Kubernetes
+2. [Kubernetes Operator](https://operatorhub.io/operator/ovms-operator) - manages Model Server using a Kubernetes Operator
+3. [OpenShift Operator](https://github.com/openvinotoolkit/operator/blob/main/docs/operator_installation.md#openshift) - manages Model Server instances in Red Hat OpenShift
+
+For operators mentioned in 2. and 3. see the [description of the deployment process](https://github.com/openvinotoolkit/operator/blob/main/docs/modelserver.md)
 
 ### Next Steps
 
