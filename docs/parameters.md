@@ -40,3 +40,37 @@ Configuration options for the server are defined only via command-line options a
 | `log_path` | `string` | Optional path to the log file. |
 | `cache_dir` | `string` | Path to the model cache storage. Caching will be enabled if this parameter is defined or the default path /opt/cache exists |
 
+## Setting Input and Output Tensors
+
+Each model defines input and output tensors in the model graph. The client passes data to model input tensors by filling appropriate entries in the request input map. 
+Prediction results can be read from the response output map. By default, OpenVINO™ Model Server uses model tensor names as input and output names in 
+prediction requests and responses. The client passes the input values to the request and reads the results by referring to the corresponding output names.
+
+Here is an example of client code:
+
+```python
+input_tensorname = 'input'
+request.inputs[input_tensorname].CopyFrom(make_tensor_proto(img, shape=(1, 3, 224, 224)))
+
+.....
+
+output_tensorname = 'resnet_v1_50/predictions/Reshape_1'
+predictions = make_ndarray(result.outputs[output_tensorname])
+```
+
+
+It is possible to adjust this behavior by adding an optional .json file named `mapping_config.json`. 
+It can map the input and output keys to the appropriate tensors. This extra mapping can be used to enable user-friendly names for models with difficult tensor names.
+Here is an example of mapping_config.json:
+
+```json
+{
+       "inputs":{ 
+          "tensor_name":"grpc_custom_input_name"
+       },
+       "outputs":{
+          "tensor_name1":"grpc_output_key_name1",
+          "tensor_name2":"grpc_output_key_name2"
+       }
+}
+```

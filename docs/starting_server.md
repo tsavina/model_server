@@ -10,6 +10,7 @@
    ovms_docs_docker_container
    ovms_docs_serving_model
    ovms_docs_additional_configurations
+   ovms_docs_kubernetes
    
 @endsphinxdirective
 
