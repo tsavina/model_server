@@ -1,4 +1,4 @@
-# Starting the Server {#ovms_docs_starting_server}
+# Deploying the Server {#ovms_docs_deploying_server}
 
 @sphinxdirective
 
@@ -6,10 +6,8 @@
    :maxdepth: 1
    :hidden:
 
-   ovms_docs_models_repository
-   ovms_docs_deploying_server
-   ovms_docs_serving_model
-   ovms_docs_additional_configurations
+   ovms_docs_docker_container
+   ovms_docs_build_from_source
    ovms_docs_kubernetes
    
 @endsphinxdirective

@@ -22,7 +22,7 @@ Model server hosts models and makes them accessible to software components over 
 
 - Remote inference enables using lightweight clients with only the necessary functions to perform API calls to edge or cloud deployments.
 - Applications are independent of the model framework, hardware device, and infrastructure.
-- Writing applications or code that triggers inference via a server.
+- Any programming language that supports REST or gRPC calls can be used to integrate with an application.
 - Clients require less updates since client libraries change very rarely.
 - Model topology and weights are not exposed directly to client applications, making it easier to control access to the model.
 - Ideal architecture for microservices-based applications and deployments in cloud environments – including Kubernetes and OpenShift clusters.
@@ -38,7 +38,7 @@ Start using OpenVINO Model Server with a fast-forward serving example from the [
 
 ![OVMS picture](ovms_high_level.png)
 
-### Model Server Functionality 
+### Model Server Features 
 
 - Support for AI accelerators, such as 
 [Intel Movidius Myriad VPUs](https://docs.openvino.ai/2022.2/openvino_docs_OV_UG_supported_plugins_MYRIAD.html), 
@@ -71,6 +71,7 @@ The models used by the server need to be stored locally or hosted remotely by ob
 * [Benchmarking results](https://docs.openvino.ai/2022.1/openvino_docs_performance_benchmarks_ovms.html) 
 * [Speed and Scale AI Inference Operations Across Multiple Architectures Demo Recording](https://techdecoded.intel.io/essentials/speed-and-scale-ai-inference-operations-across-multiple-architectures/?elq_cid=3646480_ts1607680426276&erpm_id=6470692_ts1607680426276) 
 * [Release Notes](https://github.com/openvinotoolkit/model_server/releases) 
+
 ## Contributing
 
 As an open source project, we welcome community contributions to OpenVINO&trade; Model Server. If you have a question, a feature request, or a bug report, feel free to submit a [Github issue](https://github.com/openvinotoolkit/model_server) in the repository.
