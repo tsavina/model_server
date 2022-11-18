@@ -17,10 +17,7 @@ The models need to be placed and mounted in a particular directory structure acc
 
 > **NOTE**: In execution, the versions are enabled according to a pre-defined version policy. If the client does not specify the version number in the parameters, by default, the latest version is served.
 
-The structure of the model repository depends on the number of served models:
-
-- serving single model
-- serving multiple models 
+The structure of the model repository depends on the number of the served models.
 
 ## Serving Single Model
 
@@ -55,8 +52,7 @@ docker run -d --rm -v ${PWD}/models:/models -p 9000:9000 -p 9001:9001 openvino/m
 
 @sphinxdirective
 .. panels::
-
-    .. dropdown::  Docker container starting parameters 
+   .. dropdown::  Docker container starting parameters 
     
       +----------------------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------+
       | `--rm`                                                        | | remove the container when exiting the Docker container                                                                         |
@@ -88,7 +84,7 @@ docker run -d --rm -v ${PWD}/models:/models -p 9000:9000 -p 9001:9001 openvino/m
 
 ## Serving Multiple Models 
 
-To use a container with several models, you need an additional JSON configuration file defining each model. Example structure for mulptiple models.
+To use a container with several models, you need an additional JSON configuration file defining each model. Example structure of the repository for mulptiple models:
 
 ```
 tree models/
@@ -171,6 +167,15 @@ When the Docker container has the config file mounted, it can be started - the c
 ## Serving Models from Cloud Storage
 
 The models also can be hosted remotely by cloud storages, including Google Cloud Storage (GCS), Amazon S3, or Azure Blob Storage. The model repository organization rules apply. Learn how to [use cloud storage as a model repository](using_cloud_storage.md).
+
+Note that models with a cloud storage path require setting specific environmental variables.
+
+```
+
+docker run --rm -d -v /models/:/opt/ml:ro -p 9001:9001 -p 8001:8001 -v <config.json>:/opt/ml/config.json openvino/model_server:latest \
+--config_path /opt/ml/config.json --port 9001 --rest_port 8001
+
+```
 
 ## Next Steps
 
