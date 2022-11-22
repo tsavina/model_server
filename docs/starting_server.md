@@ -18,7 +18,7 @@
 The models used by OpenVINO Model Server need to be stored locally or hosted remotely by object storage services. 
 Learn how to [prepare your model for serving](models_repository.md). 
 
-## Deploying the server 
+## Deploying the Server 
 
 [Using Docker](docker_container.md) is the recommended way of running OpenVINO Model Server. The images are available via 
 [DockerHub](https://hub.docker.com/r/openvino/model_server) and [RedHat Ecosystem Catalog](https://catalog.redhat.com/software/containers/intel/openvino-model-server/607833052937385fc98515de). 
