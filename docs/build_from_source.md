@@ -1,4 +1,4 @@
-# Build Container from Source {#ovms_docs_build_from_source}
+# Building Container from Source {#ovms_docs_build_from_source}
 
 OpenVINO Model Server is hosted inside a docker container. Depending on your requirements, you can choose one of methods: either download a pre-build container or build a container from source, if you want to have full control of the container. 
 
@@ -40,9 +40,10 @@ In the `./dist` directory it will generate:
 
 The server can be started in two ways:
 
-- using the ```./ovms/bin/ovms --help``` command in the folder, where OVMS was is installed
+- using the ```./ovms/bin/ovms --help``` command in the folder, where OVMS is installed
 - in the interactive mode - as a background process or a daemon initiated by ```systemctl/initd``` depending on the Linux distribution and specific hosting requirements
 
+Learn more about model server [starting parameters](parameters.md).
 
 > **NOTE**:
 > When [AI accelerators](accelerators.md)are used for inference execution, additional steps may be required to install their drivers and dependencies. 
@@ -52,7 +53,6 @@ The server can be started in two ways:
 
 - To serve your own model, [prepare it for serving](models_repository.md) and proceed to serve [single](single_model_mode.md) or [multiple](multiple_models_mode.md) models.
 - To see another example of setting up the model server with a face-detection model, refer to the [Quickstart guide](./ovms_quickstart.md) and explore the [demos](../demos/README.md).
-- Learn more about model server [starting parameters](parameters.md).
 
 ### Additional Resources
 

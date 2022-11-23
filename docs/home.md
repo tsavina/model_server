@@ -55,7 +55,7 @@ Start using OpenVINO Model Server with a fast-forward serving example from the [
 - [Model caching](model_cache.md) - cache the models on first load and re-use models from cache on subsequent loads
 - [Metrics usage](metrics.md) - metrics compatible with Prometheus standard
 
-The models used by the server need to be stored locally or hosted remotely by object storage services. For more details, refer to [Preparing Model Repository](./models_repository.md) documentation. Model server works inside [Docker containers](docker_container.md). It is also suitable for landing in the [Kubernetes environment](../deploy/README.md).
+The models used by the server need to be stored locally or hosted remotely by object storage services. For more details, refer to [Preparing Model Repository](./models_repository.md) documentation. Model server works inside [Docker containers](docker_container.md), on Bare Metal, and in [Kubernetes environment](../deploy/README.md).
 
 ## Next Steps
 

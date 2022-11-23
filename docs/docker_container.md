@@ -1,14 +1,9 @@
-# Deploying Model Server {#ovms_docs_docker_container}
+# Deploying Model Server in Docker Container {#ovms_docs_docker_container}
 
 OpenVINO Model Server is hosted inside a docker container. Depending on your requirements, you can choose one of methods: either download a pre-build container or build a container from source, if you want to have full control of the container. 
 
-* <a href="#prebuild-container">Use Pre-build Model Server Container</a> or
-* <a href="#model-server-installation">Build Container from Source</a>
-
-
-Model Server is also suitable for landing in the <a href="#kubernetes-installation">Kubernetes environment</a>.
-
-## Use Pre-build Model Server Container <a name="prebuild-container"></a>
+Use Pre-build Model Server Container or Build Container from Source
+Model Server is also suitable for landing in the Kubernetes environment
 
 This is a step-by-step guide on how to deploy OpenVINO&trade; Model Server on Linux, using a pre-build Docker Container. 
 
@@ -19,7 +14,7 @@ This is a step-by-step guide on how to deploy OpenVINO&trade; Model Server on Li
 - Linux, macOS or Windows via [WSL](https://docs.microsoft.com/en-us/windows/wsl/) 
 - (optional) AI accelerators [supported by OpenVINO](https://docs.openvino.ai/2022.2/openvino_docs_IE_DG_supported_plugins_Supported_Devices.html). Accelerators are tested only on bare-metal Linux hosts.
 
-### Launch Model Server Container <a name="quickstart"></a>
+### Launch Model Server Container 
 
 This example shows how to launch the model server with a ResNet50 image classification model from a cloud storage:
 
@@ -74,55 +69,6 @@ python predict.py
 ```
 If everything is set up correctly, you will see 'zebra' prediction in the output.
 
-## Build Container from Source <a name="model-server-installation"></a> 
-
-Before starting the server, make sure your hardware is [supported](https://docs.openvino.ai/2022.2/_docs_IE_DG_supported_plugins_Supported_Devices.html) by OpenVINO.
-
-> **NOTE**: OpenVINO Model Server execution on baremetal is tested on Ubuntu 20.04.x. For other operating systems, starting model server in a [docker container](./docker_container.md) is recommended.
-   
-1. Clone model server git repository.
-2. Navigate to the model server directory.
-3. Use a precompiled binary or build it in a Docker container.
-4. Navigate to the folder containing the binary package and unpack the `tar.gz` file.
-
-Run the following commands to build a model server Docker image:
-
-```bash
-
-git clone https://github.com/openvinotoolkit/model_server.git
-
-cd model_server   
-   
-# automatically build a container from source
-# it places a copy of the binary package in the `dist` subfolder in the Model Server root directory
-make docker_build
-
-# unpack the `tar.gz` file
-cd dist/ubuntu && tar -xzvf ovms.tar.gz
-
-```
-In the `./dist` directory it will generate: 
-
-- image tagged as openvino/model_server:latest - with CPU, NCS, and HDDL support
-- image tagged as openvino/model_server:latest-gpu - with CPU, NCS, HDDL, and iGPU support
-- image tagged as openvino/model_server:latest-nginx-mtls - with CPU, NCS, and HDDL support and a reference nginx setup of mTLS integration
-- release package (.tar.gz, with ovms binary and necessary libraries)
-
-> **NOTE**: Model Server docker image can be created with ubi8-minimal base image or the default ubuntu20. Model Server with the ubi base image does not support NCS and HDDL accelerators.
-
-### Running the Server
-
-The server can be started in two ways:
-
-- using the ```./ovms/bin/ovms --help``` command in the folder, where OVMS was is installed
-- in the interactive mode - as a background process or a daemon initiated by ```systemctl/initd``` depending on the Linux distribution and specific hosting requirements
-
-
-> **NOTE**:
-> When [AI accelerators](accelerators.md)are used for inference execution, additional steps may be required to install their drivers and dependencies. 
-> Learn more in the [OpenVINO installation guide](https://docs.openvino.ai/2022.2/openvino_docs_install_guides_installing_openvino_linux.html).
-
-### Next Steps
 
 - To serve your own model, [prepare it for serving](models_repository.md) and proceed to serve [single](single_model_mode.md) or [multiple](multiple_models_mode.md) models.
 - To see another example of setting up the model server with a face-detection model, refer to the [Quickstart guide](./ovms_quickstart.md) and explore the [demos](../demos/README.md).

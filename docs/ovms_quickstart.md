@@ -4,7 +4,7 @@ OpenVINO Model Server can perform inference using pre-trained models in either [
 or [ONNX](https://onnx.ai/) format. You can get them by:
 
 - downloading models from [Open Model Zoo](https://storage.openvinotoolkit.org/repositories/open_model_zoo/public/2022.1/)
-- converting other formats using [Model Optimizer](openvino_docs_MO_DG_Deep_Learning_Model_Optimizer_DevGuide.md).
+- converting other formats using [Model Optimizer](openvino_docs_MO_DG_Deep_Learning_Model_Optimizer_DevGuide.md)
 
 This guide uses a [face detection model](omz_models_model_face_detection_retail_0004.md) in IR format. 
 
@@ -43,9 +43,9 @@ Store components of the model in the `model/1` directory. Here is an example com
 curl --create-dirs https://storage.openvinotoolkit.org/repositories/open_model_zoo/2022.1/models_bin/2/face-detection-retail-0004/FP32/face-detection-retail-0004.xml https://storage.openvinotoolkit.org/repositories/open_model_zoo/2022.1/models_bin/2/face-detection-retail-0004/FP32/face-detection-retail-0004.bin -o model/1/face-detection-retail-0004.xml -o model/1/face-detection-retail-0004.bin
 ```
 
-> **NOTE**: For ONNX models additional steps are required. For a detailed description refer to the [ONNX format example](../demos/using_onnx_model/python/README.md).
+> **NOTE**: For ONNX models additional steps are required. Learn more in the [ONNX format example](../demos/using_onnx_model/python/README.md).
 
-OpenVINO Model Server expects a particular folder structure for models - in this case `model` directory has following content: 
+OpenVINO Model Server expects a particular folder structure for models - in this case `model` directory has the following content: 
 
 ```bash
 model/
@@ -56,8 +56,9 @@ model/
 Sub-folder 1 indicates the version of the model. If you want to upgrade the model, other versions can be added in separate subfolders (2,3...). 
 
 For more information on the folder structure and how to deploy more than one model at a time, check these links:
-- [Prepare models](models_repository.md)
-
+- [Preparing models](models_repository.md)
+- [Serving models](single_model_mode.md)
+- [Serving multiple versions of models](model_version_policy.md) 
 
 ### Step 4. Start the Model Server Container
 
@@ -68,7 +69,7 @@ docker run -d -u $(id -u):$(id -g) -v $(pwd)/model:/models/face-detection -p 900
 --model_path /models/face-detection --model_name face-detection --port 9000 --plugin_config '{"CPU_THROUGHPUT_STREAMS": "1"}' --shape auto
 ```
 
-During this step, you map the model folder to Docker. This folder will be used as the model storage from which the server will access models.
+During this step, the model folder is mapped to Docker. This folder will be used as the model storage from which the server will access models.
 
 ### Step 5. Prepare the Example Client Components
 
@@ -82,6 +83,8 @@ For more information, check these links:
 
 - [Information on the face detection script](../demos/face_detection/python/README.md)
 - [More Model Server client scripts](../demos/README.md)
+- [Clients](./clients.md)
+
 
 ### Step 6. Download Data for Inference
 
@@ -107,7 +110,7 @@ python face_detection.py --batch_size 1 --width 600 --height 400 --input_images_
 
 ### Step 8. Review the Results
 
-You will see inference results:
+You will see the results:
 
 ```bash
 Start processing 1 iterations with batch size 1
@@ -127,6 +130,7 @@ In our case, it will be a modified input image with bounding boxes indicating de
 
 ![Inference results](quickstart_result.jpg)
 
-Similar steps can be performed with an ONNX model. Check the inference [use case example with a public ResNet model in ONNX format](../demos/using_onnx_model/python/README.md). 
 
-Congratulations, you have completed the Quickstart guide. Proceed to experiment with [demos](../demos/README.md) or explore [model server features](ovms_docs_starting_server) to create your application.
+Similar steps can be performed with an ONNX model. Check the inference [use case example](../demos/using_onnx_model/python/README.md) with a public ResNet model in ONNX format. 
+
+Congratulations, you have completed the Quickstart guide. Proceed to experiment with [demos](../demos/README.md) or explore [model server features](features.md) to create your application.

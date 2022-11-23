@@ -1,10 +1,14 @@
 # Serving Models {#ovms_docs_serving_model}
 
+Serving a single model is the simplest way to deploy OpenVINO™ Model Server. Only one model is served and the whole configuration is passed via CLI parameters.
+Note that changing configuration in runtime while serving a single model is not possible. Serving multiple models requires a configuration file that stores settings for all served models. 
+You can add and delete models, as well as update their configurations in runtime, without restarting the model server.
+
 ## Serving Single Model
 
 Before starting the container, make sure you [prepared the model for serving](models_repository.md).
 
-Start the model server by running the following command: 
+Start the model server by running the following command with your parameters: 
 
 ```
 docker run -d --rm -v <models_repository>:/models -p 9000:9000 -p 9001:9001 openvino/model_server:latest \
@@ -110,7 +114,10 @@ To use a container with several models, you need an additional JSON configuratio
 ```
 
 When the Docker container has the config file mounted, it can be started - the command is minimalistic, as arguments are read from the config file. 
-Note that models with a cloud storage path require setting specific environmental variables.
+
+## Serving Models from Cloud Storage
+
+Note that models with a cloud storage path require setting specific environmental variables. Learn more in [Using cloud storage](using_cloud_storage.md) documentation.
 
 ```
 
