@@ -1,4 +1,4 @@
-# Deploying Model Server {#ovms_docs_deploying_server}
+# Starting Model Server {#ovms_docs_deploying_server}
 
 @sphinxdirective
 
