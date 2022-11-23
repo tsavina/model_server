@@ -1,4 +1,4 @@
-# What Is Model Serving
+# What Is Model Serving {#ovms_what_is_openvino_model_server}
 
 @sphinxdirective
 
