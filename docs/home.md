@@ -22,7 +22,7 @@ Model server hosts models and makes them accessible to software components over 
 
 - Remote inference enables using lightweight clients with only the necessary functions to perform API calls to edge or cloud deployments.
 - Applications are independent of the model framework, hardware device, and infrastructure.
-- Any programming language that supports REST or gRPC calls can be used to integrate with an application
+- Client applications in any programming language that supports REST or gRPC calls can be used to run inference remotely on the model server.
 - Clients require less updates since client libraries change very rarely.
 - Model topology and weights are not exposed directly to client applications, making it easier to control access to the model.
 - Ideal architecture for microservices-based applications and deployments in cloud environments – including Kubernetes and OpenShift clusters.
