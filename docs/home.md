@@ -1,4 +1,4 @@
-# Model Serving {#ovms_what_is_openvino_model_server}
+# What Is Model Serving
 
 @sphinxdirective
 
@@ -15,8 +15,6 @@
    ovms_docs_troubleshooting
 
 @endsphinxdirective
-
-## What Is Model Serving
 
 Model server hosts models and makes them accessible to software components over standard network protocols: a client sends a request to the model server, which performs model inference and sends a response back to the client. Model server offers many advantages for efficient model deployment: 
 
