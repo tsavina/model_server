@@ -35,8 +35,6 @@ Model server hosts models and makes them accessible to software components over 
 
 OpenVINO&trade; Model Server (OVMS) is a high-performance system for serving models. Implemented in C++ for scalability and optimized for deployment on Intel architectures, the model server uses the same architecture and API as [TensorFlow Serving](https://github.com/tensorflow/serving) and [KServe](https://github.com/kserve/kserve) while applying OpenVINO for inference execution. Inference service is provided via gRPC or REST API, making deploying new algorithms and AI experiments easy.
 
-Start using OpenVINO Model Server with a fast-forward serving example from the [Quickstart guide](ovms_quickstart.md).
-
 ![OVMS picture](ovms_high_level.png)
 
 ### Model Server Features 
@@ -58,12 +56,7 @@ Start using OpenVINO Model Server with a fast-forward serving example from the [
 
 The models used by the server need to be stored locally or hosted remotely by object storage services. For more details, refer to [Preparing Model Repository](./models_repository.md) documentation. Model server works inside [Docker containers](docker_container.md), on Bare Metal, and in [Kubernetes environment](../deploy/README.md).
 
-## Next Steps
-
-- [Start the model server](docker_container.md)
-- Follow an example from the [Quickstart guide](ovms_quickstart.md) 
-- Explore the model server [features](features.md)
-- Experiment with [demos](../demos/README.md)  
+Start using OpenVINO Model Server with a fast-forward serving example from the [Quickstart guide](ovms_quickstart.md).
 
 ## Additional Resources
 
@@ -72,7 +65,3 @@ The models used by the server need to be stored locally or hosted remotely by ob
 * [Benchmarking results](https://docs.openvino.ai/2022.1/openvino_docs_performance_benchmarks_ovms.html) 
 * [Speed and Scale AI Inference Operations Across Multiple Architectures Demo Recording](https://techdecoded.intel.io/essentials/speed-and-scale-ai-inference-operations-across-multiple-architectures/?elq_cid=3646480_ts1607680426276&erpm_id=6470692_ts1607680426276) 
 * [Release Notes](https://github.com/openvinotoolkit/model_server/releases) 
-
-## Contributing
-
-As an open source project, we welcome community contributions to OpenVINO&trade; Model Server. If you have a question, a feature request, or a bug report, feel free to submit a [Github issue](https://github.com/openvinotoolkit/model_server) in the repository.

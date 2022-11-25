@@ -12,19 +12,53 @@
    
 @endsphinxdirective
 
-## Docker
+@sphinxdirective
 
-[Using Docker](docker_container.md) is the recommended way of running OpenVINO Model Server. The images are available via 
-[DockerHub](https://hub.docker.com/r/openvino/model_server) and [RedHat Ecosystem Catalog](https://catalog.redhat.com/software/containers/intel/openvino-model-server/607833052937385fc98515de). 
+.. panels::
 
-## Bare Metal
+   ---
+    
+   [Using Docker](docker_container.md) is the recommended way of running OpenVINO Model Server. The images are available via 
+   [DockerHub](https://hub.docker.com/r/openvino/model_server) and [RedHat Ecosystem Catalog](https://catalog.redhat.com/software/containers/intel/openvino-model-server/607833052937385fc98515de)
 
-Description placeholder. 
+   +++
 
-## Build from Source
+   .. link-button:: ovms_docs_docker_container
+      :type: ref
+      :text: Docker
+      :classes: btn-primary btn-block 
 
-Description placeholder. 
+   ---
 
-## Kubernetes
+   Placeholder
 
-Description placeholder. 
+   +++
+
+   .. link-button:: ovms_docs_build_from_source
+      :type: ref
+      :text: Bare Metal
+      :classes: btn-outline-primary btn-block 
+
+   ---
+
+   Placeholder
+
+   +++
+
+   .. link-button:: ovms_docs_build_from_source
+      :type: ref
+      :text: Build from Source
+      :classes: btn-outline-primary btn-block 
+
+   ---
+
+   Placeholder
+
+   +++
+
+   .. link-button:: ovms_docs_kubernetes
+      :type: ref
+      :text: Kubernetes
+      :classes: btn-outline-primary btn-block 
+
+@endsphinxdirective
