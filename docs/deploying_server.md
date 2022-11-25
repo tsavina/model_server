@@ -36,17 +36,6 @@
 
    .. link-button:: ovms_docs_build_from_source
       :type: ref
-      :text: Bare Metal
-      :classes: btn-outline-primary btn-block 
-
-   ---
-
-   Placeholder
-
-   +++
-
-   .. link-button:: ovms_docs_build_from_source
-      :type: ref
       :text: Build from Source
       :classes: btn-outline-primary btn-block 
 
