@@ -1,11 +1,5 @@
 # DAG Configuration File  {#ovms_docs_dag_config}
 
-* <a href="#configuration-file">Configuration file</a>
-* <a href="#current-limitations">Current Limitations</a>
-
-
-## Configuration file <a name="configuration-file"></a>
-
 Pipelines configuration is to be placed in the same json file like the 
 [models config file](multiple_models_mode.md).
 While models are defined in section `model_config_list`, pipelines are to be configured in
