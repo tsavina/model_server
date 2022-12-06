@@ -26,10 +26,6 @@ In this section you can find short code samples to interact with OpenVINO Model 
 
 This tutorial shows how to perform inference on JPEG images using the gRPC API in OpenVINO Model Server.
 
-## INTRO TO BE ADDED
-
-### Use ovmsclient
-
 To run a prediction using a ResNet-50 image classification model, deploy OpenVINO Model Server with the model. You can do that with the command below:
 
 ```bash

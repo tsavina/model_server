@@ -5,7 +5,6 @@
 .. toctree::
    :maxdepth: 1
    :hidden:
-
    ovms_docs_docker_container
    ovms_docs_build_from_source
    ovms_docs_kubernetes
@@ -13,41 +12,28 @@
 @endsphinxdirective
 
 @sphinxdirective
-
 .. panels::
-
    ---
     
-   [Using Docker](docker_container.md) is the recommended way of running OpenVINO Model Server. The images are available via 
-   [DockerHub](https://hub.docker.com/r/openvino/model_server) and [RedHat Ecosystem Catalog](https://catalog.redhat.com/software/containers/intel/openvino-model-server/607833052937385fc98515de)
-
+   Using Docker is the recommended way of running OpenVINO Model Server. The images are available via DockerHub and RedHat Ecosystem Catalog. 
    +++
-
    .. link-button:: ovms_docs_docker_container
       :type: ref
-      :text: Docker
+      :text: Use Docker Container
       :classes: btn-primary btn-block 
-
    ---
-
-   Placeholder
-
+   Build a Docker container from source, if you want to have full control of the container.
    +++
-
    .. link-button:: ovms_docs_build_from_source
       :type: ref
-      :text: Build from Source
+      :text: Build Docker Container from Source
       :classes: btn-outline-primary btn-block 
-
    ---
-
-   Placeholder
-
+   Deploy OpenVINO Model Server in Kubernetes via helm chart, Kubernetes Operator or OpenShift Operator.
    +++
-
    .. link-button:: ovms_docs_kubernetes
       :type: ref
-      :text: Kubernetes
+      :text: Use Kubernetes
       :classes: btn-outline-primary btn-block 
 
 @endsphinxdirective
