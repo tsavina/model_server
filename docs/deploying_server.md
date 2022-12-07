@@ -1,4 +1,4 @@
-# Starting Model Server {#ovms_docs_deploying_server}
+# Deploying Model Server {#ovms_docs_deploying_server}
 
 1. Docker is the recommended way to deploy OpenVINO Model Server. Pre-built container images are available on Docker Hub and Red Hat Ecosystem Catalog. 
 2. Build a Docker container from source, if you want to have full control of the container.
