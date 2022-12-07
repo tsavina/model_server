@@ -37,26 +37,9 @@ OpenVINO&trade; Model Server (OVMS) is a high-performance system for serving mod
 
 ![OVMS picture](ovms_high_level.png)
 
-### Model Server Features 
-
-- Support for AI accelerators, such as 
-[Intel Movidius Myriad VPUs](https://docs.openvino.ai/2022.2/openvino_docs_OV_UG_supported_plugins_MYRIAD.html), 
-[GPU](https://docs.openvino.ai/2022.2/openvino_docs_OV_UG_supported_plugins_GPU.html), and 
-[HDDL](https://docs.openvino.ai/2022.2/openvino_docs_OV_UG_supported_plugins_HDDL.html) 
-- [Model reshaping](shape_batch_size_and_layout.md) in runtime for high-throughput and low-latency
-- [Serving pipelines of models](dag_scheduler.md) - connecting multiple models to deploy complex processing solutions and reducing data transfer overhead using Directed Acyclic Graph Scheduler
-- [Creating custom nodes in DAG pipelines](custom_node_development.md) - allowing model inference and data transformations to be implemented with a custom node C/C++ dynamic library
-- [Sending input data in binary format](binary_input.md) - data can be sent in JPEG or PNG formats to reduce traffic and offload the client applications
-- [Serving stateful models](stateful_models.md) - models that operate on sequences of data and maintain their state between inference requests
-- [Serving multiple versions of models](model_version_policy.md) 
-- [Updates of models in runtime](online_config_changes.md) 
-- [Performance tuning](performance_tuning.md)
-- [Model caching](model_cache.md) - cache the models on first load and re-use models from cache on subsequent loads
-- [Metrics usage](metrics.md) - metrics compatible with Prometheus standard
-
 The models used by the server need to be stored locally or hosted remotely by object storage services. For more details, refer to [Preparing Model Repository](./models_repository.md) documentation. Model server works inside [Docker containers](docker_container.md), on Bare Metal, and in [Kubernetes environment](../deploy/README.md).
 
-Start using OpenVINO Model Server with a fast-forward serving example from the [Quickstart guide](ovms_quickstart.md).
+Start using OpenVINO Model Server with a fast-forward serving example from the [Quickstart guide](ovms_quickstart.md) or explore [Model Server features](features.md).
 
 ## Additional Resources
 
