@@ -1,7 +1,7 @@
 # Deploying Model Server {#ovms_docs_deploying_server}
 
 1. Docker is the recommended way to deploy OpenVINO Model Server. Pre-built container images are available on Docker Hub and Red Hat Ecosystem Catalog. 
-2. Build a Docker container from source, if you want to have full control of the container.
+2. Host Model Server on baremetal.
 3. Deploy OpenVINO Model Server in Kubernetes via helm chart, Kubernetes Operator or OpenShift Operator.
 
 ## Deploying Model Server in Docker Container 
@@ -70,50 +70,19 @@ python predict.py
 ```
 If everything is set up correctly, you will see 'zebra' prediction in the output.
 
-## Building Container from Source 
+## Deploying Model Server on Baremetal
 
-Before starting the server, make sure your hardware is [supported](https://docs.openvino.ai/2022.2/_docs_IE_DG_supported_plugins_Supported_Devices.html) by OpenVINO.
+There are two ways to start the server:
 
-> **NOTE**: OpenVINO Model Server execution on baremetal is tested on Ubuntu 20.04.x. For other operating systems, starting model server in a [docker container](./docker_container.md) is recommended.
-   
-1. Clone model server git repository.
-2. Navigate to the model server directory.
-3. Use a precompiled binary or build it in a Docker container.
-4. Navigate to the folder containing the binary package and unpack the `tar.gz` file.
-
-Run the following commands to build a model server Docker image:
-
-```bash
-
-git clone https://github.com/openvinotoolkit/model_server.git
-
-cd model_server   
-   
-# automatically build a container from source
-# it places a copy of the binary package in the `dist` subfolder in the Model Server root directory
-make docker_build
-
-# unpack the `tar.gz` file
-cd dist/ubuntu && tar -xzvf ovms.tar.gz
-
-```
-In the `./dist` directory it will generate: 
-
-- image tagged as openvino/model_server:latest - with CPU, NCS, and HDDL support
-- image tagged as openvino/model_server:latest-gpu - with CPU, NCS, HDDL, and iGPU support
-- image tagged as openvino/model_server:latest-nginx-mtls - with CPU, NCS, and HDDL support and a reference nginx setup of mTLS integration
-- release package (.tar.gz, with ovms binary and necessary libraries)
-
-> **NOTE**: Model Server docker image can be created with ubi8-minimal base image or the default ubuntu20. Model Server with the ubi base image does not support NCS and HDDL accelerators.
-
-### Running the Server
-
-The server can be started in two ways:
-
-- using the ```./ovms/bin/ovms --help``` command in the folder, where OVMS is installed
-- in the interactive mode - as a background process or a daemon initiated by ```systemctl/initd``` depending on the Linux distribution and specific hosting requirements
+- using the ```./ovms/bin/ovms --help``` command from inside the directory where OVMS is installed
+- in interactive mode as a background process or a daemon initiated by ```systemctl/initd``` depending on the Linux distribution and specific hosting requirements
 
 Learn more about model server [starting parameters](parameters.md).
+
+> **NOTE**:
+> When serving models on [AI accelerators](accelerators.md), some additional steps may be required to install device drivers and dependencies. 
+> Learn more in the [Additional Configurations for Hardware](https://docs.openvino.ai/latest/openvino_docs_install_guides_configurations_header.html) documentation.
+
 
 ## Deploying Model Server in Kubernetes 
 
@@ -127,6 +96,7 @@ For operators mentioned in 2. and 3. see the [description of the deployment proc
 
 ## Next Steps
 
+- [Start the server](single_model_mode.md) 
 - Try the model server [features](features.md)
 - Explore the model server [demos](../demos/README.md)
 
