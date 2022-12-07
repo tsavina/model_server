@@ -9,7 +9,6 @@
    ovms_docs_parameters
    ovms_docs_target_devices
    ovms_docs_cloud_storage
-   ovms_docs_security
 
 @endsphinxdirective
 
@@ -38,9 +37,3 @@ GPU, and HDDL, as well as Multi-Device, Heterogeneous and Auto Device Plugins fo
 
 Leverage remote storages, compatible with Google Cloud Storage (GCS), Amazon S3, or Azure Blob Storage, to create more flexible model repositories 
 that are easy to use and manage, for example, in Kubernetes deployments. [Learn more](using_cloud_storage.md)
-
-## Keeping Deployments Secure
-
-While deploying model server, think about security of your deployment. Take care of appropriate permissions and keeping your models in a safe place. 
-Consider configuring access restrictions and traffic encryption to secure communication with the model server.
-[Learn more](security_considerations.md)
