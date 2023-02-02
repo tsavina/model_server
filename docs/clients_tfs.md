@@ -9,7 +9,7 @@
 
    <a name='-python-client' id='-python-client'/>
 
-`Python Client`_
+`Python Client`__
 =================
 
 @endsphinxdirective
@@ -220,7 +220,7 @@ For complete usage examples see [ovmsclient samples](https://github.com/openvino
 
    <a name='-cpp-go-clients' id='-cpp-go-clients'/>
 
-`C++ and Go Clients`_
+`C++ and Go Clients`__
 ======================
 
 @endsphinxdirective

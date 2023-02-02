@@ -14,7 +14,7 @@ OpenVINO Model Server supports a range of cloud storage options. In general, "re
 
    <a name='-azure' id='-azure'/>
 
-`Azure Cloud Storage`_
+`Azure Cloud Storage`__
 =======================
 
 @endsphinxdirective
@@ -54,7 +54,7 @@ By default, the `https_proxy` variable will be used. If you want to use `http_pr
 
    <a name='-gcs' id='-gcs'/>
 
-`Google Cloud Storage`_
+`Google Cloud Storage`__
 ========================
 
 @endsphinxdirective
@@ -79,7 +79,7 @@ openvino/model_server:latest \
 
    <a name='-s3' id='-s3'/>
 
-`Amazon S3 and MinIO Storage`_
+`Amazon S3 and MinIO Storage`__
 ===============================
 
 @endsphinxdirective
